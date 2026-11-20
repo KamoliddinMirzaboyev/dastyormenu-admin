@@ -10,7 +10,8 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../lib/toast';
 import Button from '../../components/UI/Button';
-import { mockStore } from '../../lib/mockStore';
+import { managerApi } from '../../lib/managerClient';
+import { authService } from '../../lib/authService';
 
 const orgSchema = z.object({
   name: z.string().min(2, "Restoran nomi kamida 2 ta belgidan iborat bo'lishi kerak"),
@@ -61,13 +62,17 @@ const SettingsPage: React.FC = () => {
 
   const onOrgSubmit = async (data: OrgFormData) => {
     try {
-      mockStore.updateOrganization({
+      const res = await managerApi.organization.updateOrganization({
         name: data.name,
         address: data.address,
         phone: data.phone,
       });
-      success("Restoran ma'lumotlari muvaffaqiyatli saqlandi!");
-      loadProfile();
+      if (res.success) {
+        success("Restoran ma'lumotlari muvaffaqiyatli saqlandi!");
+        loadProfile();
+      } else {
+        toastError(res.error?.message || "Xatolik yuz berdi");
+      }
     } catch {
       toastError("Xatolik yuz berdi");
     }
@@ -75,14 +80,13 @@ const SettingsPage: React.FC = () => {
 
   const onPasswordSubmit = async (data: PasswordFormData) => {
     try {
-      // In demo mode, verify password or update demo credentials
-      if (data.current !== '1234') {
-        toastError("Joriy parol noto'g'ri (Demo parol: 1234)");
-        return;
+      const res = await authService.changePassword(data);
+      if (res.success) {
+        success("Parol muvaffaqiyatli o'zgartirildi!");
+        resetPass();
+      } else {
+        toastError(res.error?.message || "Parolni o'zgartirib bo'lmadi");
       }
-      await new Promise(resolve => setTimeout(resolve, 400));
-      success("Parol muvaffaqiyatli o'zgartirildi!");
-      resetPass();
     } catch {
       toastError("Parolni o'zgartirib bo'lmadi");
     }
@@ -92,15 +96,24 @@ const SettingsPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 1024 * 1024) {
+      toastError("Rasm hajmi 1 MB dan oshmasligi kerak");
+      return;
+    }
+
     setUploading(true);
     try {
       const reader = new FileReader();
-      reader.onload = (uploadEvent) => {
+      reader.onload = async (uploadEvent) => {
         const base64 = uploadEvent.target?.result as string;
         if (base64) {
-          mockStore.updateOrganization({ logo_url: base64 });
-          success("Restoran logosi yangilandi!");
-          loadProfile();
+          const res = await managerApi.organization.updateOrganization({ logo_url: base64 });
+          if (res.success) {
+            success("Restoran logosi yangilandi!");
+            loadProfile();
+          } else {
+            toastError(res.error?.message || "Rasm yuklashda xatolik yuz berdi");
+          }
         }
         setUploading(false);
       };

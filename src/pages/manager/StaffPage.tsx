@@ -15,7 +15,7 @@ import { staffService } from '../../lib/staffService';
 const generatePassword = () => {
   const chars = '0123456789';
   let result = '';
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 6; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
@@ -27,9 +27,13 @@ const roleLabels: Record<string, string> = {
   waiter: 'Ofitsiant',
 };
 
-const PasswordCell: React.FC<{ password: string }> = ({ password }) => {
+const PasswordCell: React.FC<{ password?: string }> = ({ password }) => {
   const [visible, setVisible] = useState(false);
   const { success } = useToast();
+
+  if (!password || password === '••••••') {
+    return <span className="font-mono text-xs text-[#71717A]">Maxfiy (Xavfsiz)</span>;
+  }
 
   const copy = () => {
     navigator.clipboard.writeText(password);
@@ -38,7 +42,7 @@ const PasswordCell: React.FC<{ password: string }> = ({ password }) => {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="font-mono text-sm text-[#FAFAFA]">{visible ? password : '••••'}</span>
+      <span className="font-mono text-sm text-[#FAFAFA]">{visible ? password : '••••••'}</span>
       <button onClick={() => setVisible(v => !v)} className="text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors">
         {visible ? <EyeOff size={13} /> : <Eye size={13} />}
       </button>
@@ -82,7 +86,7 @@ const StaffFormModal: React.FC<{
         password: data.password,
         full_name: data.full_name,
         role: data.role,
-        pin_code: data.password,
+        pin_code: data.role === 'chef' ? (data.password.length === 6 ? data.password : '123456') : undefined,
         monthly_salary: salaryTiyin,
         is_active: true,
       });
@@ -359,7 +363,7 @@ const StaffPage: React.FC = () => {
                         {member.username}
                       </span>
                     </td>
-                    <td className="py-3 px-4"><PasswordCell password={member.pin_code || '1111'} /></td>
+                    <td className="py-3 px-4"><PasswordCell password={member.pin_code} /></td>
                     <td className="py-3 px-4">
                       <motion.button
                         whileTap={{ scale: 0.94 }}

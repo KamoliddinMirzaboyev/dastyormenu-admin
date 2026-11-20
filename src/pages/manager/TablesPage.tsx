@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { motion, type Variants } from 'framer-motion';
-import { Plus, Trash2, X, Utensils, CheckCircle, Clock } from 'lucide-react';
+import { Plus, Trash2, X, Utensils, CheckCircle, Clock, QrCode, Download } from 'lucide-react';
 import { Table, UserProfile, Menu, Order } from '../../lib/types';
 import { useToast } from '../../lib/toast';
 import Button from '../../components/UI/Button';
@@ -42,6 +42,7 @@ const TablesPage: React.FC = () => {
 
   // New Order Modal for Waiter
   const [selectedTableForOrder, setSelectedTableForOrder] = useState<string | null>(null);
+  const [selectedQrTable, setSelectedQrTable] = useState<Table | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -277,6 +278,15 @@ const TablesPage: React.FC = () => {
 
                   <motion.button
                     whileTap={{ scale: 0.92 }}
+                    onClick={() => setSelectedQrTable(table)}
+                    title="QR Kodni ko'rish / yuklab olish"
+                    className="p-2 rounded-xl text-[#F59E0B] hover:text-[#D97706] hover:bg-[#F59E0B]/10 transition-colors"
+                  >
+                    <QrCode size={15} />
+                  </motion.button>
+
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
                     onClick={() => deleteTable(table.id, table.table_number)}
                     title="O'chirish"
                     className="p-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
@@ -327,6 +337,55 @@ const TablesPage: React.FC = () => {
                   {adding ? 'Qo\'shilmoqda...' : 'Qo\'shish'}
                 </Button>
               </div>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* QR Code Modal */}
+      <Dialog.Root open={!!selectedQrTable} onOpenChange={open => !open && setSelectedQrTable(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 animate-fade-in" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xs bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6 z-50 shadow-2xl text-center">
+            <div className="flex justify-between items-center mb-4">
+              <Dialog.Title className="text-base font-bold text-[#FAFAFA]">
+                {selectedQrTable?.table_number}-stol QR Kodi
+              </Dialog.Title>
+              <Dialog.Close className="text-[#A1A1AA] hover:text-[#FAFAFA]">
+                <X size={18} />
+              </Dialog.Close>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl inline-block mx-auto mb-4 shadow-md">
+              <img
+                src={selectedQrTable ? tableService.getQrCodeUrl(selectedQrTable.id) : ''}
+                alt={`QR Code ${selectedQrTable?.table_number}-stol`}
+                className="w-48 h-48 object-contain"
+                onError={(e) => {
+                  // Fallback to QR code generator API if table has qr_code_url
+                  const target = e.currentTarget;
+                  if (selectedQrTable?.qr_code_url) {
+                    target.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedQrTable.qr_code_url)}`;
+                  }
+                }}
+              />
+            </div>
+
+            <p className="text-xs text-[#A1A1AA] mb-4">
+              Mijoz ushbu QR kodni skaner qilib menyuni ko'rishi va buyurtma berishi mumkin.
+            </p>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={selectedQrTable ? tableService.getQrCodeUrl(selectedQrTable.id) : '#'}
+                download={`stol-${selectedQrTable?.table_number}-qr.png`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 bg-[#F59E0B] hover:bg-[#D97706] text-black font-bold text-xs py-2.5 px-3 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <Download size={14} />
+                <span>Yuklab olish</span>
+              </a>
             </div>
           </Dialog.Content>
         </Dialog.Portal>

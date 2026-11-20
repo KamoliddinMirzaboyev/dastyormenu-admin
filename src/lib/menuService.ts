@@ -1,20 +1,22 @@
-// ─── Menu Service (Demo / Mock Mode) ──────────────────────────────────────────
+// ─── Menu Service (Manager API) ───────────────────────────────────────────────
 
-import { ApiResponse } from './api';
-import { Menu, MenuItemType } from './types';
-import { mockStore } from './mockStore';
+import { managerApi, ApiResponseEnvelope } from './managerClient';
+import { Menu, MenuItemType, PreparationArea } from './types';
 
 export interface CreateMenuRequest {
+  organization?: string;
   name: string;
   item_type?: MenuItemType;
   unit?: string;
   unit_amount?: number | string;
   description?: string;
   image?: File | string;
-  price: number; // tiyin
-  cost_price?: number; // tiyin
+  image_url?: string;
+  price: number; // in tiyin
+  cost_price?: number; // in tiyin
   category: string;
   cook_time_minutes: number;
+  preparation_area?: PreparationArea;
   ingredients?: string;
   is_available?: boolean;
   sort_order?: number;
@@ -28,83 +30,119 @@ export interface UpdateMenuRequest {
   name?: string;
   description?: string;
   image?: File | string;
-  price?: number; // tiyin
-  cost_price?: number; // tiyin
+  image_url?: string;
+  price?: number; // in tiyin
+  cost_price?: number; // in tiyin
   cook_time_minutes?: number;
+  preparation_area?: PreparationArea;
   ingredients?: string;
   is_available?: boolean;
   sort_order?: number;
 }
 
-class MenuService {
-  async getMenus(categoryId?: string): Promise<ApiResponse<Menu[]>> {
-    const data = mockStore.getMenu(categoryId);
-    return { success: true, data };
-  }
+function mapMenu(m: any): Menu {
+  return {
+    id: m.id,
+    organization_id: m.organization_id || m.organization || '',
+    category_id: m.category_id || m.category || '',
+    name: m.name || m.name_uz || 'Taom',
+    description: m.description || m.description_uz || null,
+    ingredients: m.ingredients || m.ingredients_uz || null,
+    image_url: m.image_url || m.image || null,
+    price: m.price || 0, // already in tiyin
+    cost_price: m.cost_price || 0,
+    cook_time_minutes: m.cook_time_minutes ?? 15,
+    preparation_area: m.preparation_area || (m.item_type === 'product' ? 'none' : 'kitchen'),
+    is_available: m.is_available ?? true,
+    sort_order: m.sort_order ?? 0,
+    item_type: m.item_type || (m.preparation_area === 'none' || m.preparation_area === 'bar' ? 'product' : 'dish'),
+    unit: m.unit,
+    unit_amount: m.unit_amount,
+  };
+}
 
-  async createMenu(data: CreateMenuRequest): Promise<ApiResponse<Menu>> {
-    let imageUrl = typeof data.image === 'string' ? data.image : null;
-    if (!imageUrl) {
-      imageUrl = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';
+class MenuService {
+  async getMenus(categoryId?: string): Promise<ApiResponseEnvelope<Menu[]>> {
+    const params: Record<string, string> = {};
+    if (categoryId && categoryId !== 'all') {
+      params.category = categoryId;
     }
 
-    const created = mockStore.createMenu({
+    const res = await managerApi.menu.getMenu(params);
+
+    if (res.success && res.data) {
+      const items = Array.isArray(res.data) ? res.data : [];
+      return { success: true, data: items.map(mapMenu) };
+    }
+
+    return { success: false, error: res.error };
+  }
+
+  async createMenu(data: CreateMenuRequest): Promise<ApiResponseEnvelope<Menu>> {
+    const imagePayload = typeof data.image === 'string' ? data.image : data.image_url || undefined;
+
+    const payload = {
       name: data.name,
-      item_type: data.item_type,
+      category: data.category,
+      item_type: data.item_type || 'dish',
+      price: data.price, // in tiyin
+      cost_price: data.cost_price || 0,
+      description: data.description || '',
+      ingredients: data.ingredients || '',
+      cook_time_minutes: data.cook_time_minutes ?? 15,
+      image: imagePayload,
+      is_available: data.is_available ?? true,
+      sort_order: data.sort_order ?? 0,
       unit: data.unit,
       unit_amount: data.unit_amount,
-      description: data.description,
-      image_url: imageUrl,
-      price: data.price,
-      cost_price: data.cost_price,
-      category_id: data.category,
-      cook_time_minutes: data.cook_time_minutes,
-      ingredients: data.ingredients,
-      is_available: data.is_available,
-      sort_order: data.sort_order,
-    });
+      preparation_area: data.preparation_area || (data.item_type === 'product' ? 'none' : 'kitchen'),
+    };
 
-    return { success: true, data: created };
-  }
-
-  async updateMenu(id: string, data: UpdateMenuRequest): Promise<ApiResponse<Menu>> {
-    const patch: Partial<Menu> = {};
-    if (data.name !== undefined) patch.name = data.name;
-    if (data.item_type !== undefined) patch.item_type = data.item_type;
-    if (data.unit !== undefined) patch.unit = data.unit;
-    if (data.unit_amount !== undefined) patch.unit_amount = data.unit_amount;
-    if (data.description !== undefined) patch.description = data.description;
-    if (data.price !== undefined) patch.price = data.price;
-    if (data.cost_price !== undefined) patch.cost_price = data.cost_price;
-    if (data.category !== undefined) patch.category_id = data.category;
-    if (data.cook_time_minutes !== undefined) patch.cook_time_minutes = data.cook_time_minutes;
-    if (data.ingredients !== undefined) patch.ingredients = data.ingredients;
-    if (data.is_available !== undefined) patch.is_available = data.is_available;
-    if (data.sort_order !== undefined) patch.sort_order = data.sort_order;
-    if (typeof data.image === 'string') patch.image_url = data.image;
-
-    const updated = mockStore.updateMenu(id, patch);
-    if (!updated) {
-      return { success: false, error: { message: 'Taom topilmadi' } };
+    const res = await managerApi.menu.createMenu(payload);
+    if (res.success && res.data) {
+      return { success: true, data: mapMenu(res.data) };
     }
-    return { success: true, data: updated };
+
+    return { success: false, error: res.error };
   }
 
-  async deleteMenu(id: string): Promise<ApiResponse<void>> {
-    mockStore.deleteMenu(id);
-    return { success: true, data: undefined };
-  }
+  async updateMenu(id: string, data: UpdateMenuRequest): Promise<ApiResponseEnvelope<Menu>> {
+    const payload: Record<string, unknown> = {};
+    if (data.name !== undefined) payload.name = data.name;
+    if (data.category !== undefined) payload.category = data.category;
+    if (data.item_type !== undefined) payload.item_type = data.item_type;
+    if (data.price !== undefined) payload.price = data.price;
+    if (data.cost_price !== undefined) payload.cost_price = data.cost_price;
+    if (data.description !== undefined) payload.description = data.description;
+    if (data.ingredients !== undefined) payload.ingredients = data.ingredients;
+    if (data.cook_time_minutes !== undefined) payload.cook_time_minutes = data.cook_time_minutes;
+    if (data.is_available !== undefined) payload.is_available = data.is_available;
+    if (data.sort_order !== undefined) payload.sort_order = data.sort_order;
+    if (data.unit !== undefined) payload.unit = data.unit;
+    if (data.unit_amount !== undefined) payload.unit_amount = data.unit_amount;
+    if (typeof data.image === 'string') payload.image = data.image;
+    else if (data.image_url !== undefined) payload.image = data.image_url;
 
-  async toggleAvailable(id: string, isAvailable: boolean): Promise<ApiResponse<Menu>> {
-    const updated = mockStore.updateMenu(id, { is_available: !isAvailable });
-    if (!updated) {
-      return { success: false, error: { message: 'Taom topilmadi' } };
+    const res = await managerApi.menu.updateMenu(id, payload);
+    if (res.success && res.data) {
+      return { success: true, data: mapMenu(res.data) };
     }
-    return { success: true, data: updated };
+
+    return { success: false, error: res.error };
   }
 
-  async toggleAvailability(id: string, current: boolean): Promise<ApiResponse<Menu>> {
-    return this.toggleAvailable(id, current);
+  async deleteMenu(id: string): Promise<ApiResponseEnvelope<void>> {
+    const res = await managerApi.menu.deleteMenu(id);
+    return { success: res.success, error: res.error, data: undefined };
+  }
+
+  async toggleAvailable(id: string, isAvailable: boolean): Promise<ApiResponseEnvelope<Menu>> {
+    const res = await managerApi.menu.toggleAvailability(id, !isAvailable);
+    if (res.success && res.data) {
+      return { success: true, data: mapMenu(res.data) };
+    }
+
+    return { success: false, error: res.error };
   }
 }
 

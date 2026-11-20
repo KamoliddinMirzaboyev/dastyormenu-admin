@@ -1,150 +1,210 @@
-// ─── Auth Service (Demo / Mock Mode) ──────────────────────────────────────────
+// ─── Auth Service (Manager API) ───────────────────────────────────────────────
 
-import { ApiResponse } from './api';
-import { LoginResponse, RefreshTokenResponse } from './apiTypes';
+import { managerApi, ApiResponseEnvelope } from './managerClient';
 import { UserProfile, Organization } from './types';
-import { mockStore } from './mockStore';
 
 export interface LoginRequest {
   login: string;
   password: string;
+  organization?: string;
+}
+
+export interface PasswordChangeRequest {
+  current: string;
+  new: string;
+  confirm: string;
 }
 
 class AuthService {
   /**
-   * Login with username/email and password.
-   * Configured for demo credentials: admin / 1234
+   * Login with username/email and password via POST /api/manager/auth/login/
    */
-  async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    const cleanLogin = (credentials.login || '').trim().toLowerCase();
-    const cleanPass = (credentials.password || '').trim();
+  async login(credentials: LoginRequest): Promise<ApiResponseEnvelope<{
+    access_token: string;
+    refresh_token: string;
+    user: UserProfile;
+    organization: Organization;
+  }>> {
+    const login = (credentials.login || '').trim();
+    const password = (credentials.password || '').trim();
 
-    // Check for demo admin credentials
-    const isDemoAdmin = (cleanLogin === 'admin' || cleanLogin === 'admin@dastyor.uz') && cleanPass === '1234';
-    
-    // Also accept staff members login if needed
-    const staffMatch = mockStore.getStaff().find(s => 
-      (s.username.toLowerCase() === cleanLogin || s.email?.toLowerCase() === cleanLogin) && 
-      (s.pin_code === cleanPass || cleanPass === '1234')
-    );
+    try {
+      const res = await managerApi.auth.login({
+        login,
+        password,
+        organization: credentials.organization,
+      });
 
-    if (isDemoAdmin || staffMatch) {
-      const user: UserProfile = isDemoAdmin ? mockStore.getAdminUser() : staffMatch!;
-      const organization: Organization = mockStore.getOrganization();
+      if (res.success && res.data?.access_token) {
+        managerApi.setTokens(res.data.access_token, res.data.refresh_token);
 
-      const access_token = 'demo_access_token_' + Date.now();
-      const refresh_token = 'demo_refresh_token_' + Date.now();
+        const user: UserProfile = {
+          id: String(res.data.user?.id || '1'),
+          username: res.data.user?.username || login,
+          full_name: res.data.user?.full_name || login,
+          role: res.data.user?.role || 'manager',
+          is_active: res.data.user?.is_active ?? true,
+          organization_id: res.data.organization?.id,
+        };
 
-      const transformedData: LoginResponse = {
-        access_token,
-        refresh_token,
-        user,
-        organization,
-      };
+        const organization: Organization = {
+          id: res.data.organization?.id || 'org-1',
+          name: res.data.organization?.name || 'Dastyor Restoran',
+          full_name: res.data.organization?.full_name || res.data.organization?.name,
+          address: res.data.organization?.address,
+          phone: res.data.organization?.phone,
+          logo_url: res.data.organization?.logo_url,
+          is_active: true,
+        };
 
-      // Save to localStorage
-      localStorage.setItem('dastyor_token', access_token);
-      localStorage.setItem('dastyor_refresh_token', refresh_token);
-      localStorage.setItem('dastyor_auth', JSON.stringify({ user, organization }));
+        localStorage.setItem('dastyor_auth', JSON.stringify({ user, organization }));
+
+        return {
+          success: true,
+          data: {
+            access_token: res.data.access_token,
+            refresh_token: res.data.refresh_token,
+            user,
+            organization,
+          },
+        };
+      }
 
       return {
-        success: true,
-        data: transformedData,
+        success: false,
+        error: res.error || {
+          message: "Login yoki parol noto'g'ri",
+          code: 'INVALID_CREDENTIALS',
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          message: error instanceof Error ? error.message : "Tarmoq xatoligi yuz berdi",
+          code: 'NETWORK_ERROR',
+        },
       };
     }
-
-    return {
-      success: false,
-      error: {
-        message: 'Login yoki parol noto\'g\'ri! Demo login: admin, parol: 1234',
-        code: 'INVALID_CREDENTIALS',
-      },
-    };
   }
 
   /**
-   * Logout and clear all auth data
+   * Logout via POST /api/manager/auth/logout/
    */
   async logout(): Promise<void> {
+    const refreshToken = managerApi.getRefreshToken();
+    if (refreshToken) {
+      try {
+        await managerApi.auth.logout(refreshToken);
+      } catch (e) {
+        console.warn('Logout error (safe to ignore):', e);
+      }
+    }
     this.clearAuthData();
   }
 
   /**
-   * Refresh access token
+   * Refresh token
    */
-  async refreshToken(): Promise<ApiResponse<RefreshTokenResponse>> {
-    const access_token = 'demo_access_token_' + Date.now();
-    localStorage.setItem('dastyor_token', access_token);
-    return {
-      success: true,
-      data: { access_token },
-    };
-  }
-
-  /**
-   * Get user profile
-   */
-  async getProfile(): Promise<ApiResponse<UserProfile>> {
-    const user = mockStore.getAdminUser();
-    return {
-      success: true,
-      data: user,
-    };
-  }
-
-  /**
-   * Update user profile
-   */
-  async updateProfile(data: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> {
-    const updated = mockStore.updateAdminUser(data);
-    const stored = this.getStoredAuth();
-    if (stored) {
-      stored.user = updated;
-      localStorage.setItem('dastyor_auth', JSON.stringify(stored));
+  async refreshToken(): Promise<ApiResponseEnvelope<{ access_token: string }>> {
+    const newAccess = await managerApi.refreshAccessToken();
+    if (newAccess) {
+      return { success: true, data: { access_token: newAccess } };
     }
+
     return {
-      success: true,
-      data: updated,
+      success: false,
+      error: { message: "Tokenni yangilab bo'lmadi", code: '401' },
     };
   }
 
   /**
-   * Check if token is valid
+   * Get user session & profile: GET /api/manager/profile/
    */
-  async verifyAuth(): Promise<boolean> {
-    const token = this.getToken();
-    return !!token;
+  async getProfile(): Promise<ApiResponseEnvelope<UserProfile>> {
+    const token = managerApi.getToken();
+    if (!token) {
+      return { success: false, error: { message: "Avtorizatsiyadan o'tilmagan" } };
+    }
+
+    const res = await managerApi.auth.getProfile();
+    if (res.success && res.data) {
+      const user: UserProfile = {
+        id: String(res.data.user?.id || '1'),
+        username: res.data.user?.username || '',
+        full_name: res.data.user?.full_name || res.data.user?.username || '',
+        role: res.data.user?.role || 'manager',
+        organization_id: res.data.organization?.id,
+        is_active: res.data.user?.is_active ?? true,
+      };
+
+      if (res.data.organization) {
+        const stored = this.getStoredAuth() || { user, organization: res.data.organization };
+        localStorage.setItem(
+          'dastyor_auth',
+          JSON.stringify({ ...stored, user, organization: res.data.organization })
+        );
+      }
+
+      return { success: true, data: user };
+    }
+
+    return { success: false, error: res.error };
   }
 
   /**
-   * Get stored auth data from localStorage
+   * Update profile: PATCH /api/manager/profile/
    */
+  async updateProfile(data: { full_name?: string; email?: string }): Promise<ApiResponseEnvelope<UserProfile>> {
+    const res = await managerApi.auth.updateProfile(data);
+    if (!res.success) {
+      return { success: false, error: res.error };
+    }
+
+    const stored = this.getStoredAuth();
+    if (stored?.user) {
+      const updatedUser = { ...stored.user, ...data };
+      localStorage.setItem('dastyor_auth', JSON.stringify({ ...stored, user: updatedUser }));
+      return { success: true, data: updatedUser };
+    }
+
+    return { success: false, error: { message: "Profil topilmadi" } };
+  }
+
+  /**
+   * Change password: POST /api/manager/password/
+   */
+  async changePassword(data: PasswordChangeRequest): Promise<ApiResponseEnvelope<void>> {
+    const res = await managerApi.auth.changePassword(data);
+    if (res.success) {
+      this.clearAuthData();
+    }
+    return res;
+  }
+
+  async verifyAuth(): Promise<boolean> {
+    const token = managerApi.getToken();
+    if (!token) return false;
+
+    const res = await managerApi.auth.getProfile();
+    return res.success;
+  }
+
   getStoredAuth(): { user: UserProfile; organization: Organization } | null {
     try {
-      const data = localStorage.getItem('dastyor_auth');
-      if (data) {
-        return JSON.parse(data);
-      }
-    } catch (e) {
-      console.error('Error reading auth data from localStorage:', e);
+      const auth = localStorage.getItem('dastyor_auth');
+      return auth ? JSON.parse(auth) : null;
+    } catch {
+      return null;
     }
-    return null;
   }
 
-  /**
-   * Get access token from localStorage
-   */
   getToken(): string | null {
-    return localStorage.getItem('dastyor_token');
+    return managerApi.getToken();
   }
 
-  /**
-   * Clear all auth data from localStorage
-   */
   clearAuthData(): void {
-    localStorage.removeItem('dastyor_token');
-    localStorage.removeItem('dastyor_refresh_token');
-    localStorage.removeItem('dastyor_auth');
+    managerApi.clearTokens();
   }
 }
 

@@ -1,69 +1,97 @@
-// ─── Table Service (Demo / Mock Mode) ─────────────────────────────────────────
+// ─── Table Service (Manager API) ──────────────────────────────────────────────
 
-import { ApiResponse } from './api';
+import { managerApi, ApiResponseEnvelope } from './managerClient';
 import { Table } from './types';
-import { mockStore } from './mockStore';
 
 export interface CreateTableRequest {
   organization?: string;
   table_number: number;
-  assigned_waiter?: string;
+  assigned_waiter?: string | null;
   is_active?: boolean;
 }
 
 export interface UpdateTableRequest {
   table_number?: number;
-  assigned_waiter?: string;
+  assigned_waiter?: string | null;
   is_active?: boolean;
 }
 
+function mapTable(t: any): Table {
+  return {
+    id: t.id,
+    organization_id: t.organization_id || t.organization,
+    table_number: t.table_number,
+    assigned_waiter_id: t.assigned_waiter_id || (t.assigned_waiter ? String(t.assigned_waiter) : null),
+    waiter_name: t.waiter_name || null,
+    is_active: t.is_active ?? true,
+    qr_code_id: t.qr_code_id,
+    qr_code_url: t.qr_code_url || managerApi.tables.getQrCodeUrl(t.id),
+  };
+}
+
 class TableService {
-  async getTables(): Promise<ApiResponse<Table[]>> {
-    const data = mockStore.getTables();
-    return { success: true, data };
+  async getTables(): Promise<ApiResponseEnvelope<Table[]>> {
+    const res = await managerApi.tables.getTables();
+    if (res.success && res.data) {
+      const items = Array.isArray(res.data) ? res.data : [];
+      return { success: true, data: items.map(mapTable) };
+    }
+    return { success: false, error: res.error };
   }
 
-  async createTable(data: CreateTableRequest): Promise<ApiResponse<Table>> {
-    const table = mockStore.createTable(data.table_number, data.assigned_waiter);
-    return { success: true, data: table };
-  }
-
-  async createTablesBulk(count: number): Promise<ApiResponse<Table[]>> {
-    const tables = mockStore.createTablesBulk(count);
-    return { success: true, data: tables };
-  }
-
-  async updateTable(id: string, data: UpdateTableRequest): Promise<ApiResponse<Table>> {
-    const updated = mockStore.updateTable(id, {
+  async createTable(data: CreateTableRequest): Promise<ApiResponseEnvelope<Table>> {
+    const res = await managerApi.tables.createTable({
       table_number: data.table_number,
-      assigned_waiter_id: data.assigned_waiter,
+      assigned_waiter: data.assigned_waiter || null,
+      is_active: data.is_active ?? true,
+    });
+
+    if (res.success && res.data) {
+      return { success: true, data: mapTable(res.data) };
+    }
+
+    return { success: false, error: res.error };
+  }
+
+  async createTablesBulk(count: number): Promise<ApiResponseEnvelope<Table[]>> {
+    const res = await managerApi.tables.createTablesBulk(count);
+    if (res.success && res.data) {
+      const items = Array.isArray(res.data) ? res.data : [];
+      return { success: true, data: items.map(mapTable) };
+    }
+
+    return { success: false, error: res.error };
+  }
+
+  async updateTable(id: string, data: UpdateTableRequest): Promise<ApiResponseEnvelope<Table>> {
+    const res = await managerApi.tables.updateTable(id, {
+      table_number: data.table_number,
+      assigned_waiter: data.assigned_waiter !== undefined ? data.assigned_waiter : undefined,
       is_active: data.is_active,
     });
-    if (!updated) {
-      return { success: false, error: { message: 'Stol topilmadi' } };
+
+    if (res.success && res.data) {
+      return { success: true, data: mapTable(res.data) };
     }
-    return { success: true, data: updated };
+
+    return { success: false, error: res.error };
   }
 
-  async deleteTable(id: string): Promise<ApiResponse<void>> {
-    mockStore.deleteTable(id);
-    return { success: true, data: undefined };
+  async deleteTable(id: string): Promise<ApiResponseEnvelope<void>> {
+    const res = await managerApi.tables.deleteTable(id);
+    return { success: res.success, error: res.error, data: undefined };
   }
 
-  async assignWaiter(tableId: string, waiterId: string | null): Promise<ApiResponse<Table>> {
-    const updated = mockStore.assignWaiterToTable(tableId, waiterId);
-    if (!updated) {
-      return { success: false, error: { message: 'Stol topilmadi' } };
-    }
-    return { success: true, data: updated };
+  async assignWaiter(tableId: string, waiterId: string | null): Promise<ApiResponseEnvelope<Table>> {
+    return this.updateTable(tableId, { assigned_waiter: waiterId });
   }
 
-  async toggleActive(id: string, isActive: boolean): Promise<ApiResponse<Table>> {
-    const updated = mockStore.updateTable(id, { is_active: !isActive });
-    if (!updated) {
-      return { success: false, error: { message: 'Stol topilmadi' } };
-    }
-    return { success: true, data: updated };
+  async toggleActive(id: string, isActive: boolean): Promise<ApiResponseEnvelope<Table>> {
+    return this.updateTable(id, { is_active: !isActive });
+  }
+
+  getQrCodeUrl(tableId: string): string {
+    return managerApi.tables.getQrCodeUrl(tableId);
   }
 }
 

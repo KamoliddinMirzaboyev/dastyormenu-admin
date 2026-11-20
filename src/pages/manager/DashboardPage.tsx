@@ -6,12 +6,16 @@ import {
 } from 'recharts';
 import {
   DollarSign, TrendingUp, Plus, Clock,
-  ArrowRight, Armchair, RotateCcw
+  ArrowRight, Armchair, RefreshCw
 } from 'lucide-react';
 import StatusBadge from '../../components/UI/StatusBadge';
 import { Order, Table, UserProfile, Menu, formatPrice } from '../../lib/types';
 import { Skeleton } from '../../components/UI/LoadingSkeleton';
-import { mockStore } from '../../lib/mockStore';
+import { orderService } from '../../lib/orderService';
+import { tableService } from '../../lib/tableService';
+import { staffService } from '../../lib/staffService';
+import { menuService } from '../../lib/menuService';
+import { useRealtimeOrders } from '../../hooks/useRealtime';
 import { AddExpenseModal } from '../../components/Finance/AddExpenseModal';
 import { NewOrderModal } from '../../components/Orders/NewOrderModal';
 import { useToast } from '../../lib/toast';
@@ -66,27 +70,34 @@ const DashboardPage: React.FC = () => {
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [selectedTableForOrder, setSelectedTableForOrder] = useState<string | null>(null);
 
-  const loadData = () => {
+  const loadData = async () => {
     setLoading(true);
-    const allOrders = mockStore.getOrders();
-    const allTables = mockStore.getTables();
-    const allStaff = mockStore.getStaff();
-    const allMenus = mockStore.getMenu();
-
-    setOrders(allOrders);
-    setTables(allTables);
-    setStaff(allStaff);
-    setMenus(allMenus);
-    setLoading(false);
+    try {
+      const [oRes, tRes, sRes, mRes] = await Promise.all([
+        orderService.getOrders(),
+        tableService.getTables(),
+        staffService.getStaff(),
+        menuService.getMenus(),
+      ]);
+      if (oRes.success && oRes.data) setOrders(oRes.data);
+      if (tRes.success && tRes.data) setTables(tRes.data);
+      if (sRes.success && sRes.data) setStaff(sRes.data);
+      if (mRes.success && mRes.data) setMenus(mRes.data);
+    } catch (e) {
+      console.error('Dashboard loadData error:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     loadData();
-    const unsubscribe = mockStore.subscribe(() => {
-      loadData();
-    });
-    return () => unsubscribe();
   }, []);
+
+  useRealtimeOrders({
+    onInsert: () => loadData(),
+    onUpdate: () => loadData(),
+  });
 
   // Today's Date String
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
@@ -135,17 +146,17 @@ const DashboardPage: React.FC = () => {
 
   const maxHourly = Math.max(...hourlyData.map(d => d.orders), 1);
 
-  const handleResetDemo = () => {
-    if (confirm('Barcha demo ma\'lumotlarni boshlang\'ich holatga qaytarishni xohlaysizmi?')) {
-      mockStore.resetDemoData();
-      loadData();
-      success('Barcha ma\'lumotlar muvaffaqiyatli yangilandi!');
-    }
+  const handleRefresh = () => {
+    loadData();
+    success("Ma'lumotlar yangilandi");
   };
 
-  const handleUpdateOrderStatus = (orderId: string, status: Order['status']) => {
-    mockStore.updateOrderStatus(orderId, status);
-    success('Buyurtma holati yangilandi');
+  const handleUpdateOrderStatus = async (orderId: string, status: Order['status']) => {
+    const res = await orderService.updateStatus(orderId, status);
+    if (res.success) {
+      success('Buyurtma holati yangilandi');
+      loadData();
+    }
   };
 
   return (
@@ -202,14 +213,14 @@ const DashboardPage: React.FC = () => {
             <span>Xarajat</span>
           </motion.button>
 
-          {/* Reset Demo Button */}
+          {/* Refresh Data Button */}
           <motion.button
             whileTap={{ scale: 0.92 }}
-            onClick={handleResetDemo}
-            title="Demo ma'lumotlarni qayta tiklash"
+            onClick={handleRefresh}
+            title="Ma'lumotlarni yangilash"
             className="p-2 bg-[#1C1C1C] hover:bg-[#252525] border border-[#2E2E2E] rounded-xl text-[#71717A] hover:text-[#FAFAFA] transition-colors"
           >
-            <RotateCcw size={15} />
+            <RefreshCw size={15} />
           </motion.button>
         </div>
       </div>

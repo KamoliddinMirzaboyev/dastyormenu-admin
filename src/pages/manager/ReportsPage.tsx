@@ -73,11 +73,16 @@ const ReportsPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'count' | 'revenue' | 'profit'>('count');
   const [activeProductTab, setActiveProductTab] = useState<'all' | 'fast' | 'slow' | 'zero'>('all');
 
-  const loadReport = () => {
+  const loadReport = async () => {
     setLoading(true);
-    const data = reportService.generateReport(period, customStart, customEnd);
-    setReport(data);
-    setLoading(false);
+    try {
+      const data = await reportService.getReport(period, customStart, customEnd);
+      setReport(data);
+    } catch (e) {
+      console.error('Failed to load report:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

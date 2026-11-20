@@ -1,24 +1,20 @@
-// ─── API Types & Response Envelope ──────────────────────────────────────────
+// ─── API Client (Unified via Manager API Client) ──────────────────────────────
 
-export interface ApiError {
-  message: string;
-  code?: string;
-  status?: number;
-  details?: Record<string, unknown>;
-}
+import { managerApi, ApiResponseEnvelope, ApiErrorPayload } from './managerClient';
 
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: ApiError;
-}
+export type ApiError = ApiErrorPayload;
+export type ApiResponse<T = unknown> = ApiResponseEnvelope<T>;
 
 export const API_MESSAGES = {
   NETWORK_ERROR: 'Internet aloqasi mavjud emas',
-  TIMEOUT_ERROR: 'So\'rov vaqti tugadi',
+  TIMEOUT_ERROR: "So'rov vaqti tugadi",
   SERVER_ERROR: 'Serverda xatolik yuz berdi',
-  UNAUTHORIZED: 'Avtorizatsiyadan o\'tilmagan',
+  UNAUTHORIZED: "Avtorizatsiyadan o'tilmagan yoki token eskirgan",
   FORBIDDEN: 'Ruxsat berilmagan',
-  NOT_FOUND: 'Ma\'lumot topilmadi',
+  NOT_FOUND: "Ma'lumot topilmadi",
   ERROR: 'Xatolik yuz berdi',
+  SUCCESS: 'Muvaffaqiyatli bajarildi',
 } as const;
+
+export const apiClient = managerApi;
+export default apiClient;

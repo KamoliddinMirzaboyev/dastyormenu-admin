@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, LogIn, AlertCircle, KeyRound, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../lib/toast';
 
@@ -23,19 +23,13 @@ const LoginPage: React.FC = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(true);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting }, setValue } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      login: 'admin',
-      password: '1234',
+      login: '',
+      password: '',
     },
   });
-
-  const handleQuickFill = () => {
-    setValue('login', 'admin');
-    setValue('password', '1234');
-    toastSuccess('Demo login va parol kiritildi!');
-  };
 
   const onSubmit = async (data: FormData) => {
     setApiError(null);
@@ -63,31 +57,8 @@ const LoginPage: React.FC = () => {
           <div className="w-14 h-14 bg-[#F59E0B] rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#F59E0B]/20">
             <span className="text-black font-extrabold text-2xl">D</span>
           </div>
-          <h1 className="text-2xl font-bold text-[#FAFAFA]">Dastyor Grand</h1>
+          <h1 className="text-2xl font-bold text-[#FAFAFA]">Dastyor Menu</h1>
           <p className="text-[#A1A1AA] text-xs mt-1">Restoran Menejer & Ofitsiant Paneli</p>
-        </div>
-
-        {/* Demo Helper Card */}
-        <div className="bg-[#1A1A1A] border border-[#2E2E2E] rounded-xl p-4 mb-4">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#F59E0B]">
-              <KeyRound size={15} />
-              <span>Demo Kirish Ma'lumotlari:</span>
-            </div>
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.94 }}
-              onClick={handleQuickFill}
-              className="text-[11px] bg-[#F59E0B] hover:bg-[#D97706] text-black font-bold px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors"
-            >
-              <Sparkles size={11} />
-              <span>To'ldirish</span>
-            </motion.button>
-          </div>
-          <div className="mt-2 text-xs text-[#FAFAFA] flex items-center justify-between bg-black/40 px-3 py-1.5 rounded-lg border border-[#2E2E2E] font-mono">
-            <span>Login: <strong className="text-[#F59E0B]">admin</strong></span>
-            <span>Parol: <strong className="text-[#F59E0B]">1234</strong></span>
-          </div>
         </div>
 
         {/* Error Alert */}

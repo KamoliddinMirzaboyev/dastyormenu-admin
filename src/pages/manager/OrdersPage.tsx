@@ -240,10 +240,14 @@ const OrdersPage: React.FC = () => {
                             </motion.button>
                           )}
 
-                          {order.status !== 'completed' && order.status !== 'cancelled' && (
+                          {(order.status === 'pending' || order.status === 'cooking') && (
                             <motion.button
                               whileTap={{ scale: 0.88 }}
-                              onClick={() => updateStatus(order.id, 'cancelled')}
+                              onClick={() => {
+                                if (confirm(`Buyurtmani bekor qilishni tasdiqlaysizmi?`)) {
+                                  updateStatus(order.id, 'cancelled');
+                                }
+                              }}
                               title="Bekor qilish"
                               className="text-xs text-rose-400 hover:text-rose-300 p-1.5 rounded hover:bg-rose-500/10 transition-colors"
                             >

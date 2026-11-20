@@ -1,15 +1,20 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type UserRole = 'super_admin' | 'manager' | 'chef' | 'waiter';
+export type UserRole = 'super_admin' | 'owner' | 'manager' | 'chef' | 'waiter';
 export type OrderStatus = 'pending' | 'cooking' | 'ready' | 'completed' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type PreparationArea = 'kitchen' | 'bar' | 'none';
 
 export interface Organization {
   id: string;
   name?: string;
+  name_uz?: string;
+  name_ru?: string;
+  name_en?: string;
   full_name?: string;
   logo_url?: string | null;
   address?: string | null;
+  address_uz?: string | null;
   phone?: string | null;
   role?: string;
   is_active: boolean;
@@ -39,6 +44,9 @@ export interface Category {
   organization_id?: string;
   organization?: string;
   name: string;
+  name_uz?: string;
+  name_ru?: string;
+  name_en?: string;
   icon: string;
   sort_order: number;
   is_active: boolean;
@@ -54,16 +62,27 @@ export interface Menu {
   id: string;
   organization_id: string;
   category_id: string;
-  item_type?: MenuItemType; // 'dish' = oshxona taomi, 'product' = tayyor bar/mahsulot (cola, pepsi, suv, non, va h.k.)
-  unit?: ProductUnit | string; // 'litr', 'dona', 'gram', 'kg', 'ml', 'choynak', 'butilka'
-  unit_amount?: number | string; // masalan 0.5, 1, 1.5, 250
+  item_type?: MenuItemType; // 'dish' = oshxona taomi, 'product' = tayyor bar/mahsulot
+  unit?: ProductUnit | string;
+  unit_amount?: number | string;
   name: string;
+  name_uz?: string;
+  name_ru?: string;
+  name_en?: string;
   description: string | null;
+  description_uz?: string | null;
+  description_ru?: string | null;
+  description_en?: string | null;
+  ingredients: string | null;
+  ingredients_uz?: string | null;
+  ingredients_ru?: string | null;
+  ingredients_en?: string | null;
   image_url: string | null;
   price: number; // sotilish narxi (tiyin)
   cost_price?: number; // tan narxi (tiyin)
   cook_time_minutes: number;
-  ingredients: string | null;
+  preparation_area?: PreparationArea;
+  discount_percentage?: number;
   is_available: boolean;
   sort_order: number;
   category?: Category;
@@ -76,7 +95,9 @@ export interface Table {
   assigned_waiter_id?: string | null;
   waiter_name?: string | null;
   is_active: boolean;
-  assigned_waiter?: UserProfile;
+  qr_code_id?: string;
+  qr_code_url?: string;
+  assigned_waiter?: UserProfile | number | string | null;
   orders?: Order[];
   created_at?: string;
   updated_at?: string;
@@ -86,17 +107,33 @@ export interface Order {
   id: string;
   organization_id: string;
   table_id: string;
-  waiter_id: string | null;
+  table_number?: number;
+  waiter_id?: string | null;
+  waiter_name?: string | null;
   status: OrderStatus;
+  priority?: number;
+  payment_status?: string;
+  source?: 'customer' | 'staff';
   total_amount: number; // tiyin
   tip_amount: number;
   tip_percentage: number;
+  grand_total?: number;
   customer_note: string | null;
   created_at: string;
   completed_at: string | null;
   table?: Table;
   waiter?: UserProfile;
   order_items?: OrderItem[];
+  items?: Array<{
+    id?: string;
+    menu_item_id?: string;
+    name?: string;
+    unit_price?: number;
+    quantity?: number;
+    modifications?: string;
+    line_total?: number;
+    preparation_area?: string;
+  }>;
 }
 
 export interface OrderItem {
@@ -163,20 +200,10 @@ export function toTiyin(som: number): number {
 export function getImageUrl(imageUrl: string | null | undefined): string | null {
   if (!imageUrl) return null;
   
-  // Agar to'liq URL bo'lsa, o'zini qaytarish
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
     return imageUrl;
   }
   
-  // Agar nisbiy yo'l bo'lsa, backend URL bilan birlashtirish
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
-  
-  // Agar baseUrl bo'sh bo'lsa (proxy ishlatilayotgan bo'lsa)
-  if (!baseUrl) {
-    // Proxy orqali
-    return imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
-  }
-  
-  // To'liq URL yaratish
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://dastroymenu.abboskhoja.uz';
   return imageUrl.startsWith('/') ? `${baseUrl}${imageUrl}` : `${baseUrl}/${imageUrl}`;
 }
