@@ -1,6 +1,6 @@
 // ─── Report Service (Manager API) ─────────────────────────────────────────────
 
-import { managerApi, ApiResponseEnvelope } from './managerClient';
+import { managerApi } from './managerClient';
 import { FinancialStats } from './expenseService';
 
 export type ReportPeriod = 'today' | 'yesterday' | 'week' | 'month' | 'all' | 'custom';

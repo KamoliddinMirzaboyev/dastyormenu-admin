@@ -94,7 +94,7 @@ const LoginPage: React.FC = () => {
                 <input
                   {...register('password')}
                   type={showPass ? 'text' : 'password'}
-                  placeholder="1234"
+                  placeholder="••••••••"
                   className="w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-xl px-3.5 py-2.5 pr-10 text-sm text-[#FAFAFA] placeholder-[#71717A] focus:outline-none focus:border-[#F59E0B] transition-colors"
                   autoComplete="current-password"
                 />
@@ -119,7 +119,7 @@ const LoginPage: React.FC = () => {
                 />
                 <span className="text-[#A1A1AA]">Eslab qolish</span>
               </label>
-              <span className="text-[#71717A]">Demo rejim</span>
+              <span className="text-[#71717A]">Himoyalangan tizim</span>
             </div>
 
             <motion.button
@@ -145,7 +145,7 @@ const LoginPage: React.FC = () => {
         </div>
 
         <p className="text-center text-[11px] text-[#71717A] mt-6">
-          Dastyor Restoran Tizimi © {new Date().getFullYear()} • 100% Oflayn Demo Rejim
+          Dastyor Restoran Boshqaruv Tizimi © {new Date().getFullYear()} • Barcha huquqlar himoyalangan
         </p>
       </motion.div>
     </div>

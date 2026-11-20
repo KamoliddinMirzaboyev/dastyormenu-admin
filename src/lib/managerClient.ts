@@ -65,6 +65,13 @@ export class ManagerClient {
     localStorage.removeItem('dastyor_auth');
   }
 
+  public handleUnauthorized() {
+    this.clearTokens();
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+      window.location.href = '/login';
+    }
+  }
+
   private onTokenRefreshed(newToken: string) {
     this.refreshSubscribers.forEach((cb) => cb(newToken));
     this.refreshSubscribers = [];
@@ -79,7 +86,7 @@ export class ManagerClient {
    */
   public async refreshAccessToken(): Promise<string | null> {
     const currentRefresh = this.getRefreshToken();
-    if (!currentRefresh || currentRefresh.startsWith('demo_')) {
+    if (!currentRefresh) {
       return null;
     }
 
@@ -148,7 +155,7 @@ export class ManagerClient {
 
     // Attach Bearer Token if present
     const token = this.getToken();
-    if (token && !headers.has('Authorization') && !token.startsWith('demo_')) {
+    if (token && !headers.has('Authorization')) {
       headers.set('Authorization', `Bearer ${token}`);
     }
 
@@ -172,41 +179,53 @@ export class ManagerClient {
 
       // Handle 401 with Token Refresh
       const isAuthPath = cleanEndpoint.startsWith('auth/login') || cleanEndpoint.startsWith('auth/refresh');
-      if (response.status === 401 && !isAuthPath && this.getRefreshToken()) {
-        if (!this.isRefreshing) {
-          this.isRefreshing = true;
-          const newToken = await this.refreshAccessToken();
-          this.isRefreshing = false;
+      if (response.status === 401 && !isAuthPath) {
+        if (this.getRefreshToken()) {
+          if (!this.isRefreshing) {
+            this.isRefreshing = true;
+            const newToken = await this.refreshAccessToken();
+            this.isRefreshing = false;
 
-          if (newToken) {
-            this.onTokenRefreshed(newToken);
-            headers.set('Authorization', `Bearer ${newToken}`);
-            response = await fetch(url, { ...options, headers });
+            if (newToken) {
+              this.onTokenRefreshed(newToken);
+              headers.set('Authorization', `Bearer ${newToken}`);
+              response = await fetch(url, { ...options, headers });
+            } else {
+              this.handleUnauthorized();
+              return {
+                success: false,
+                error: {
+                  message: "Avtorizatsiyadan o'tilmagan yoki sessiya muddati tugagan.",
+                  code: '401',
+                },
+              };
+            }
           } else {
-            return {
-              success: false,
-              error: {
-                message: "Avtorizatsiyadan o'tilmagan yoki sessiya muddati tugagan.",
-                code: '401',
-              },
-            };
+            return new Promise<ApiResponseEnvelope<T>>((resolve) => {
+              this.addRefreshSubscriber(async (newToken) => {
+                headers.set('Authorization', `Bearer ${newToken}`);
+                try {
+                  const res = await fetch(url, { ...options, headers });
+                  const json = await res.json().catch(() => null);
+                  resolve(json || { success: res.ok, data: json });
+                } catch (err) {
+                  resolve({
+                    success: false,
+                    error: { message: err instanceof Error ? err.message : 'Tarmoq xatoligi' },
+                  });
+                }
+              });
+            });
           }
         } else {
-          return new Promise<ApiResponseEnvelope<T>>((resolve) => {
-            this.addRefreshSubscriber(async (newToken) => {
-              headers.set('Authorization', `Bearer ${newToken}`);
-              try {
-                const res = await fetch(url, { ...options, headers });
-                const json = await res.json().catch(() => null);
-                resolve(json || { success: res.ok, data: json });
-              } catch (err) {
-                resolve({
-                  success: false,
-                  error: { message: err instanceof Error ? err.message : 'Tarmoq xatoligi' },
-                });
-              }
-            });
-          });
+          this.handleUnauthorized();
+          return {
+            success: false,
+            error: {
+              message: "Avtorizatsiyadan o'tilmagan yoki sessiya muddati tugagan.",
+              code: '401',
+            },
+          };
         }
       }
 

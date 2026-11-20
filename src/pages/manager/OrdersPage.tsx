@@ -269,7 +269,7 @@ const OrdersPage: React.FC = () => {
       <Dialog.Root open={!!selectedOrder} onOpenChange={open => !open && setSelectedOrder(null)}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 animate-fade-in" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-6 z-50 max-h-[90vh] overflow-y-auto shadow-2xl">
+          <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-6 z-50 max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between mb-5">
               <Dialog.Title className="text-base font-bold text-[#FAFAFA]">
                 Buyurtma #{selectedOrder?.id?.slice(-6).toUpperCase()}

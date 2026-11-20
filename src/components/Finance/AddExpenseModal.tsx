@@ -67,7 +67,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
       } else {
         toastError('Xarajat saqlanmadi');
       }
-    } catch (err) {
+    } catch {
       toastError('Xatolik yuz berdi');
     } finally {
       setIsSubmitting(false);
@@ -78,7 +78,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     <Dialog.Root open={open} onOpenChange={val => !val && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 animate-fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[#161616] border border-[#2A2A2A] rounded-xl shadow-2xl z-50 p-6 overflow-hidden">
+        <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[#161616] border border-[#2A2A2A] rounded-xl shadow-2xl z-50 p-6 overflow-hidden">
           <div className="flex items-center justify-between pb-4 border-b border-[#2A2A2A] mb-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">

@@ -40,22 +40,51 @@ function mapStaff(s: any): UserProfile {
 }
 
 class StaffService {
-  async getStaff(): Promise<ApiResponseEnvelope<UserProfile[]>> {
-    const res = await managerApi.staff.getStaff();
-    if (res.success && res.data) {
-      const items = Array.isArray(res.data) ? res.data : [];
-      return { success: true, data: items.map(mapStaff) };
+  private cache: { data: UserProfile[]; timestamp: number } | null = null;
+  private inFlight: Promise<ApiResponseEnvelope<UserProfile[]>> | null = null;
+
+  invalidateCache() {
+    this.cache = null;
+  }
+
+  async getStaff(force = false): Promise<ApiResponseEnvelope<UserProfile[]>> {
+    const TTL = 2 * 60 * 1000; // 2 minutes
+
+    if (!force && this.cache && Date.now() - this.cache.timestamp < TTL) {
+      return { success: true, data: this.cache.data };
     }
-    return { success: false, error: res.error };
+
+    if (this.inFlight && !force) {
+      return this.inFlight;
+    }
+
+    const run = (async () => {
+      try {
+        const res = await managerApi.staff.getStaff();
+        if (res.success && res.data) {
+          const items = Array.isArray(res.data) ? res.data : [];
+          const mapped = items.map(mapStaff);
+          this.cache = { data: mapped, timestamp: Date.now() };
+          return { success: true, data: mapped };
+        }
+        return { success: false, error: res.error };
+      } finally {
+        this.inFlight = null;
+      }
+    })();
+
+    this.inFlight = run;
+    return run;
   }
 
   async createStaff(data: CreateStaffRequest): Promise<ApiResponseEnvelope<UserProfile>> {
+    this.invalidateCache();
     const payload = {
       username: data.username.trim(),
       full_name: data.full_name.trim(),
       role: data.role,
       password: data.password,
-      pin_code: data.role === 'chef' ? (data.pin_code || '123456') : undefined,
+      pin_code: data.role === 'chef' ? (data.pin_code || data.password?.slice(0, 6)) : undefined,
       monthly_salary: data.monthly_salary || 0, // in tiyin
       is_active: data.is_active ?? true,
     };
@@ -69,6 +98,7 @@ class StaffService {
   }
 
   async updateStaff(id: string, data: UpdateStaffRequest): Promise<ApiResponseEnvelope<UserProfile>> {
+    this.invalidateCache();
     const res = await managerApi.staff.updateStaff(id, data);
     if (res.success && res.data) {
       return { success: true, data: mapStaff(res.data) };
@@ -78,6 +108,7 @@ class StaffService {
   }
 
   async deleteStaff(id: string): Promise<ApiResponseEnvelope<void>> {
+    this.invalidateCache();
     const res = await managerApi.staff.deleteStaff(id);
     return { success: res.success, error: res.error, data: undefined };
   }

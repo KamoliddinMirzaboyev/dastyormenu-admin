@@ -179,7 +179,11 @@ class AuthService {
     if (res.success) {
       this.clearAuthData();
     }
-    return res;
+    return {
+      success: res.success,
+      data: undefined,
+      error: res.error,
+    };
   }
 
   async verifyAuth(): Promise<boolean> {

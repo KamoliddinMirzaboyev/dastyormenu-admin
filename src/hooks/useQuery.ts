@@ -11,21 +11,22 @@ import { Fetcher, queryClient } from '../lib/queryClient';
 export interface UseQueryResult<T> {
   data: T | undefined;
   loading: boolean;
+  isFetching: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 }
 
 /**
  * Subscribe to `key` and fetch via `fetcher`. De-duplicated and cached across
- * every component using the same key. `enabled: false` defers fetching (e.g.
- * until the organization is loaded).
+ * every component using the same key. `enabled: false` defers fetching.
  */
 export function useQuery<T>(opts: {
   key: string;
   fetcher: Fetcher<T>;
   enabled?: boolean;
+  staleTime?: number;
 }): UseQueryResult<T> {
-  const { key, fetcher, enabled = true } = opts;
+  const { key, fetcher, enabled = true, staleTime } = opts;
 
   const snapshot = useSyncExternalStore(
     (cb) => queryClient.subscribe(key, cb),
@@ -34,10 +35,10 @@ export function useQuery<T>(opts: {
   );
 
   useEffect(() => {
-    if (enabled) queryClient.fetch(key, fetcher);
+    if (enabled) queryClient.fetch(key, fetcher, { staleTime });
     // fetcher identity is intentionally not a dependency — the key owns identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, enabled]);
+  }, [key, enabled, staleTime]);
 
   const refetch = useCallback(
     () => queryClient.fetch(key, fetcher, { force: true }),
@@ -45,12 +46,13 @@ export function useQuery<T>(opts: {
     [key],
   );
 
-  // Treat "enabled, nothing yet" as loading so consumers don't flash empty.
+  // Treat "enabled, nothing yet in cache" as initial loading
   const pending = enabled && snapshot.data === undefined && snapshot.error === null;
 
   return {
     data: snapshot.data,
-    loading: snapshot.loading || pending,
+    loading: (snapshot.loading && snapshot.data === undefined) || pending,
+    isFetching: snapshot.isFetching,
     error: snapshot.error,
     refetch,
   };

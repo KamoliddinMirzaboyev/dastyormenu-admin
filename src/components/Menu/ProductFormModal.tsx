@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Switch from '@radix-ui/react-switch';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productSchema, type ProductFormData } from '../../lib/validators';
 import { Upload, X, ImageIcon, Link as LinkIcon, Package } from 'lucide-react';
-import { Menu, Category, ProductUnit } from '../../lib/types';
+import { Menu, Category, ProductUnit, getImageUrl } from '../../lib/types';
 import Button from '../UI/Button';
 import { menuService } from '../../lib/menuService';
 import { useToast } from '../../lib/toast';
@@ -58,14 +58,14 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [uploading, setUploading] = useState(false);
 
   // Default category helper: pick drinks or non if exists, otherwise first category
-  const defaultCategory = () => {
+  const defaultCategoryId = useMemo(() => {
     const match = categories.find(c => 
       c.name.toLowerCase().includes('ichimlik') || 
       c.name.toLowerCase().includes('bar') || 
       c.name.toLowerCase().includes('non')
     );
     return match?.id || categories[0]?.id || '';
-  };
+  }, [categories]);
 
   const { register, handleSubmit, control, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -81,7 +81,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       sort_order: editItem.sort_order ?? 0,
     } : {
       name: '',
-      category_id: defaultCategory(),
+      category_id: defaultCategoryId,
       unit: 'litr',
       unit_amount: 1,
       price_som: undefined as any,
@@ -116,7 +116,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setImageUrl(null);
         reset({
           name: '',
-          category_id: defaultCategory(),
+          category_id: defaultCategoryId,
           unit: 'litr',
           unit_amount: 1,
           price_som: undefined as any,
@@ -127,7 +127,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         });
       }
     }
-  }, [editItem, open, reset, categories]);
+  }, [editItem, open, reset, defaultCategoryId]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -168,7 +168,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       : Math.round(data.price_som * 60);
 
     const sellingPriceTiyin = Math.round(data.price_som * 100);
-    const finalImage = imageUrl || 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80';
+    const finalImage = imageUrl?.trim() || undefined;
 
     try {
       if (editItem) {
@@ -232,7 +232,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     <Dialog.Root open={open} onOpenChange={onClose}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 animate-fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-6 z-50 max-h-[92vh] overflow-y-auto shadow-2xl">
+        <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-6 z-50 max-h-[92vh] overflow-y-auto shadow-2xl">
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-[#262626] mb-5">
             <div className="flex items-center gap-2.5">
@@ -274,7 +274,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     type="url"
                     value={customUrlInput}
                     onChange={e => setCustomUrlInput(e.target.value)}
-                    placeholder="https://images.unsplash.com/photo-..."
+                    placeholder="https://example.com/mahsulot-rasmi.jpg"
                     className="flex-1 bg-[#121212] border border-[#2A2A2A] rounded-lg px-2.5 py-1.5 text-xs text-[#FAFAFA] focus:outline-none focus:border-[#F59E0B]"
                   />
                   <button
@@ -294,7 +294,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 {imageUrl ? (
                   <>
                     <img
-                      src={imageUrl}
+                      src={getImageUrl(imageUrl) || imageUrl}
                       alt="preview"
                       className="w-full h-full object-cover"
                     />

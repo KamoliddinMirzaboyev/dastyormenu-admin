@@ -48,7 +48,7 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
       } else {
         toastError('Kategoriya qo\'shilmadi');
       }
-    } catch (e) {
+    } catch {
       toastError('Xatolik yuz berdi');
     } finally {
       setSaving(false);
@@ -63,7 +63,7 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
         success('Kategoriya o\'chirildi');
         onRefetch();
       }
-    } catch (e) {
+    } catch {
       toastError('Kategoriyani o\'chirib bo\'lmadi');
     }
   };
@@ -72,7 +72,7 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
     <Dialog.Root open={open} onOpenChange={v => !v && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 animate-fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[#161616] border border-[#2A2A2A] rounded-xl p-6 z-50 shadow-2xl">
+        <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[#161616] border border-[#2A2A2A] rounded-xl p-6 z-50 shadow-2xl">
           <div className="flex items-center justify-between mb-4">
             <Dialog.Title className="text-base font-bold text-[#FAFAFA]">Kategoriyalarni Boshqarish</Dialog.Title>
             <Dialog.Close className="text-[#A1A1AA] hover:text-[#FAFAFA] p-1.5 rounded-lg hover:bg-[#2A2A2A]"><X size={18} /></Dialog.Close>

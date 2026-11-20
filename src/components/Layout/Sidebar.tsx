@@ -6,6 +6,7 @@ import {
   Armchair, Users, BarChart3, Settings, LogOut
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { getImageUrl } from '../../lib/types';
 
 const navItems = [
   { to: '/manager',          icon: LayoutDashboard,  label: 'Bosh sahifa',     end: true },
@@ -32,7 +33,7 @@ const Sidebar: React.FC = () => {
       <div className="px-6 py-5 border-b border-[#2A2A2A]">
         <div className="flex items-center gap-3">
           {organization?.logo_url ? (
-            <img src={organization.logo_url} alt="logo" className="w-9 h-9 rounded-btn object-cover" />
+            <img src={getImageUrl(organization.logo_url) || organization.logo_url} alt="logo" className="w-9 h-9 rounded-btn object-cover" />
           ) : (
             <div className="w-9 h-9 bg-[#F59E0B] rounded-btn flex items-center justify-center">
               <span className="text-black font-bold text-sm">D</span>

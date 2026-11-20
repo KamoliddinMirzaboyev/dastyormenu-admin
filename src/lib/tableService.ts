@@ -30,16 +30,45 @@ function mapTable(t: any): Table {
 }
 
 class TableService {
-  async getTables(): Promise<ApiResponseEnvelope<Table[]>> {
-    const res = await managerApi.tables.getTables();
-    if (res.success && res.data) {
-      const items = Array.isArray(res.data) ? res.data : [];
-      return { success: true, data: items.map(mapTable) };
+  private cache: { data: Table[]; timestamp: number } | null = null;
+  private inFlight: Promise<ApiResponseEnvelope<Table[]>> | null = null;
+
+  invalidateCache() {
+    this.cache = null;
+  }
+
+  async getTables(force = false): Promise<ApiResponseEnvelope<Table[]>> {
+    const TTL = 60 * 1000; // 60 seconds
+
+    if (!force && this.cache && Date.now() - this.cache.timestamp < TTL) {
+      return { success: true, data: this.cache.data };
     }
-    return { success: false, error: res.error };
+
+    if (this.inFlight && !force) {
+      return this.inFlight;
+    }
+
+    const run = (async () => {
+      try {
+        const res = await managerApi.tables.getTables();
+        if (res.success && res.data) {
+          const items = Array.isArray(res.data) ? res.data : [];
+          const mapped = items.map(mapTable);
+          this.cache = { data: mapped, timestamp: Date.now() };
+          return { success: true, data: mapped };
+        }
+        return { success: false, error: res.error };
+      } finally {
+        this.inFlight = null;
+      }
+    })();
+
+    this.inFlight = run;
+    return run;
   }
 
   async createTable(data: CreateTableRequest): Promise<ApiResponseEnvelope<Table>> {
+    this.invalidateCache();
     const res = await managerApi.tables.createTable({
       table_number: data.table_number,
       assigned_waiter: data.assigned_waiter || null,
@@ -54,6 +83,7 @@ class TableService {
   }
 
   async createTablesBulk(count: number): Promise<ApiResponseEnvelope<Table[]>> {
+    this.invalidateCache();
     const res = await managerApi.tables.createTablesBulk(count);
     if (res.success && res.data) {
       const items = Array.isArray(res.data) ? res.data : [];
@@ -64,6 +94,7 @@ class TableService {
   }
 
   async updateTable(id: string, data: UpdateTableRequest): Promise<ApiResponseEnvelope<Table>> {
+    this.invalidateCache();
     const res = await managerApi.tables.updateTable(id, {
       table_number: data.table_number,
       assigned_waiter: data.assigned_waiter !== undefined ? data.assigned_waiter : undefined,
@@ -78,6 +109,7 @@ class TableService {
   }
 
   async deleteTable(id: string): Promise<ApiResponseEnvelope<void>> {
+    this.invalidateCache();
     const res = await managerApi.tables.deleteTable(id);
     return { success: res.success, error: res.error, data: undefined };
   }

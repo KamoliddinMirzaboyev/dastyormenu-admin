@@ -12,6 +12,8 @@ import { useToast } from '../../lib/toast';
 import Button from '../../components/UI/Button';
 import { managerApi } from '../../lib/managerClient';
 import { authService } from '../../lib/authService';
+import { getImageUrl } from '../../lib/types';
+import { resizeImage, fileToBase64 } from '../../lib/imageUploadService';
 
 const orgSchema = z.object({
   name: z.string().min(2, "Restoran nomi kamida 2 ta belgidan iborat bo'lishi kerak"),
@@ -96,30 +98,22 @@ const SettingsPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 1024 * 1024) {
-      toastError("Rasm hajmi 1 MB dan oshmasligi kerak");
-      return;
-    }
-
     setUploading(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async (uploadEvent) => {
-        const base64 = uploadEvent.target?.result as string;
-        if (base64) {
-          const res = await managerApi.organization.updateOrganization({ logo_url: base64 });
-          if (res.success) {
-            success("Restoran logosi yangilandi!");
-            loadProfile();
-          } else {
-            toastError(res.error?.message || "Rasm yuklashda xatolik yuz berdi");
-          }
+      const resized = await resizeImage(file, 512, 512, 0.85);
+      const base64 = await fileToBase64(resized);
+      if (base64) {
+        const res = await managerApi.organization.updateOrganization({ logo_url: base64 });
+        if (res.success) {
+          success("Restoran logosi yangilandi!");
+          loadProfile();
+        } else {
+          toastError(res.error?.message || "Rasm yuklashda xatolik yuz berdi");
         }
-        setUploading(false);
-      };
-      reader.readAsDataURL(file);
+      }
     } catch {
       toastError("Rasm yuklashda xatolik yuz berdi");
+    } finally {
       setUploading(false);
     }
   };
@@ -170,7 +164,7 @@ const SettingsPage: React.FC = () => {
                 <div className="relative">
                   {organization?.logo_url ? (
                     <img
-                      src={organization.logo_url}
+                      src={getImageUrl(organization.logo_url) || organization.logo_url}
                       alt="logo"
                       className="w-20 h-20 rounded-xl object-cover border-2 border-[#333] shadow-md"
                     />
@@ -294,7 +288,7 @@ const SettingsPage: React.FC = () => {
                   />
                 </div>
                 {passErrors.current && <p className="text-rose-400 text-[11px] mt-1">{passErrors.current.message}</p>}
-                <p className="text-[10px] text-[#71717A] mt-1">Standart demo parol: <span className="font-mono text-[#F59E0B]">1234</span></p>
+
               </div>
 
               <div>

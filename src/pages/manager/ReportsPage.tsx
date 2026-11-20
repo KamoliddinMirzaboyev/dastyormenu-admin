@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import {
   AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer
@@ -73,7 +73,7 @@ const ReportsPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'count' | 'revenue' | 'profit'>('count');
   const [activeProductTab, setActiveProductTab] = useState<'all' | 'fast' | 'slow' | 'zero'>('all');
 
-  const loadReport = async () => {
+  const loadReport = useCallback(async () => {
     setLoading(true);
     try {
       const data = await reportService.getReport(period, customStart, customEnd);
@@ -83,11 +83,11 @@ const ReportsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period, customStart, customEnd]);
 
   useEffect(() => {
     loadReport();
-  }, [period, customStart, customEnd]);
+  }, [loadReport]);
 
   const handlePeriodChange = (p: ReportPeriod) => {
     setPeriod(p);
@@ -680,7 +680,7 @@ const ReportsPage: React.FC = () => {
                             alt={p.name}
                             className="w-8 h-8 rounded-lg object-cover bg-[#222]"
                             onError={e => {
-                              (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&fit=crop';
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
                             }}
                           />
                         ) : (

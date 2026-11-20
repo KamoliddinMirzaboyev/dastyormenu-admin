@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, Search, Plus, Minus, ShoppingBag, Check, Utensils } from 'lucide-react';
-import { Menu, Table, UserProfile, formatPrice } from '../../lib/types';
+import { Menu, Table, UserProfile, formatPrice, getImageUrl } from '../../lib/types';
 import { orderService } from '../../lib/orderService';
 import { useToast } from '../../lib/toast';
 
@@ -47,14 +47,14 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
     } else if (tables.length > 0 && !selectedTableId) {
       setSelectedTableId(tables[0].id);
     }
-  }, [initialTableId, tables]);
+  }, [initialTableId, tables, selectedTableId]);
 
   // Extract unique categories from menu
   const categories = useMemo(() => {
     const map = new Map<string, string>();
     menu.forEach(m => {
       if (m.category_id) {
-        const catName = m.category?.name || (m.category_id === 'cat-1' ? 'Milliy taomlar' : m.category_id === 'cat-2' ? 'Kaboblar' : m.category_id === 'cat-3' ? 'Sho\'rvalar' : m.category_id === 'cat-4' ? 'Fast food' : m.category_id === 'cat-5' ? 'Salatlar' : m.category_id === 'cat-6' ? 'Ichimliklar' : 'Boshqa');
+        const catName = m.category?.name || 'Boshqa';
         map.set(m.category_id, catName);
       }
     });
@@ -141,7 +141,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
       } else {
         toastError(res.error?.message || 'Buyurtma yaratilmadi');
       }
-    } catch (e) {
+    } catch {
       toastError('Buyurtma saqlashda xatolik yuz berdi');
     } finally {
       setIsSubmitting(false);
@@ -152,7 +152,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
     <Dialog.Root open={open} onOpenChange={val => !val && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 animate-fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[92vh] bg-[#141414] border border-[#2A2A2A] rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
+        <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[92vh] bg-[#141414] border border-[#2A2A2A] rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#2A2A2A] bg-[#1A1A1A]">
             <div className="flex items-center gap-3">
@@ -273,14 +273,20 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
                             : 'bg-[#1A1A1A] border-[#2A2A2A] hover:border-[#3A3A3A]'
                         }`}
                       >
-                        <img
-                          src={item.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&fit=crop'}
-                          alt={item.name}
-                          className="w-12 h-12 rounded-lg object-cover bg-[#2A2A2A] shrink-0"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&fit=crop';
-                          }}
-                        />
+                        {item.image_url ? (
+                          <img
+                            src={getImageUrl(item.image_url) || item.image_url}
+                            alt={item.name}
+                            className="w-12 h-12 rounded-lg object-cover bg-[#2A2A2A] shrink-0"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-[#2A2A2A] flex items-center justify-center text-sm shrink-0 text-[#71717A]">
+                            🍽️
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
                             <h4 className="text-sm font-medium text-[#FAFAFA] truncate">{item.name}</h4>

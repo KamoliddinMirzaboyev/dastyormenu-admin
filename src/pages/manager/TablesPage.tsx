@@ -72,7 +72,7 @@ const TablesPage: React.FC = () => {
       } else {
         toastError('Ma\'lumotlar yuklanmadi');
       }
-    } catch (error) {
+    } catch {
       toastError('Xatolik yuz berdi');
     } finally {
       setLoading(false);
@@ -96,7 +96,7 @@ const TablesPage: React.FC = () => {
       } else {
         toastError('Stollar qo\'shilmadi');
       }
-    } catch (e) {
+    } catch {
       toastError('Xatolik yuz berdi');
     } finally {
       setAdding(false);
@@ -111,7 +111,7 @@ const TablesPage: React.FC = () => {
         success('Stol o\'chirildi');
         setTables(prev => prev.filter(t => t.id !== id));
       }
-    } catch (e) {
+    } catch {
       toastError('Stolni o\'chirib bo\'lmadi');
     }
   };
@@ -123,7 +123,7 @@ const TablesPage: React.FC = () => {
         success('Ofitsiant biriktirildi');
         fetchData();
       }
-    } catch (e) {
+    } catch {
       toastError('Ofitsiantni biriktirib bo\'lmadi');
     }
   };
@@ -346,7 +346,7 @@ const TablesPage: React.FC = () => {
       <Dialog.Root open={!!selectedQrTable} onOpenChange={open => !open && setSelectedQrTable(null)}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 animate-fade-in" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xs bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6 z-50 shadow-2xl text-center">
+          <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xs bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6 z-50 shadow-2xl text-center">
             <div className="flex justify-between items-center mb-4">
               <Dialog.Title className="text-base font-bold text-[#FAFAFA]">
                 {selectedQrTable?.table_number}-stol QR Kodi

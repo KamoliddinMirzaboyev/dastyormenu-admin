@@ -41,6 +41,19 @@ export interface UpdateMenuRequest {
 }
 
 function mapMenu(m: any): Menu {
+  let resolvedImage: string | null = null;
+  if (typeof m.image_url === 'string' && m.image_url.trim()) {
+    resolvedImage = m.image_url.trim();
+  } else if (typeof m.image === 'string' && m.image.trim()) {
+    resolvedImage = m.image.trim();
+  } else if (m.image && typeof m.image === 'object' && typeof m.image.url === 'string') {
+    resolvedImage = m.image.url.trim();
+  } else if (typeof m.photo_url === 'string' && m.photo_url.trim()) {
+    resolvedImage = m.photo_url.trim();
+  } else if (typeof m.photo === 'string' && m.photo.trim()) {
+    resolvedImage = m.photo.trim();
+  }
+
   return {
     id: m.id,
     organization_id: m.organization_id || m.organization || '',
@@ -48,7 +61,7 @@ function mapMenu(m: any): Menu {
     name: m.name || m.name_uz || 'Taom',
     description: m.description || m.description_uz || null,
     ingredients: m.ingredients || m.ingredients_uz || null,
-    image_url: m.image_url || m.image || null,
+    image_url: resolvedImage,
     price: m.price || 0, // already in tiyin
     cost_price: m.cost_price || 0,
     cook_time_minutes: m.cook_time_minutes ?? 15,
@@ -62,24 +75,63 @@ function mapMenu(m: any): Menu {
 }
 
 class MenuService {
-  async getMenus(categoryId?: string): Promise<ApiResponseEnvelope<Menu[]>> {
+  private cache: { data: Menu[]; timestamp: number } | null = null;
+  private inFlight: Promise<ApiResponseEnvelope<Menu[]>> | null = null;
+
+  invalidateCache() {
+    this.cache = null;
+  }
+
+  async getMenus(categoryId?: string, force = false): Promise<ApiResponseEnvelope<Menu[]>> {
+    const isAll = !categoryId || categoryId === 'all';
+    const TTL = 60 * 1000; // 60s in-memory cache
+
+    if (isAll && !force && this.cache && Date.now() - this.cache.timestamp < TTL) {
+      return { success: true, data: this.cache.data };
+    }
+
+    if (isAll && this.inFlight && !force) {
+      return this.inFlight;
+    }
+
     const params: Record<string, string> = {};
     if (categoryId && categoryId !== 'all') {
       params.category = categoryId;
     }
 
-    const res = await managerApi.menu.getMenu(params);
+    const run = (async () => {
+      try {
+        const res = await managerApi.menu.getMenu(params);
 
-    if (res.success && res.data) {
-      const items = Array.isArray(res.data) ? res.data : [];
-      return { success: true, data: items.map(mapMenu) };
+        if (res.success && res.data) {
+          const items = Array.isArray(res.data) ? res.data : [];
+          const mapped = items.map(mapMenu);
+          if (isAll) {
+            this.cache = { data: mapped, timestamp: Date.now() };
+          }
+          return { success: true, data: mapped };
+        }
+
+        return { success: false, error: res.error };
+      } finally {
+        if (isAll) {
+          this.inFlight = null;
+        }
+      }
+    })();
+
+    if (isAll) {
+      this.inFlight = run;
     }
 
-    return { success: false, error: res.error };
+    return run;
   }
 
   async createMenu(data: CreateMenuRequest): Promise<ApiResponseEnvelope<Menu>> {
-    const imagePayload = typeof data.image === 'string' ? data.image : data.image_url || undefined;
+    this.invalidateCache();
+    const imagePayload = typeof data.image === 'string' && data.image.trim()
+      ? data.image.trim()
+      : (typeof data.image_url === 'string' && data.image_url.trim() ? data.image_url.trim() : undefined);
 
     const payload = {
       name: data.name,
@@ -120,11 +172,15 @@ class MenuService {
     if (data.sort_order !== undefined) payload.sort_order = data.sort_order;
     if (data.unit !== undefined) payload.unit = data.unit;
     if (data.unit_amount !== undefined) payload.unit_amount = data.unit_amount;
-    if (typeof data.image === 'string') payload.image = data.image;
-    else if (data.image_url !== undefined) payload.image = data.image_url;
+    if (typeof data.image === 'string' && data.image.trim()) {
+      payload.image = data.image.trim();
+    } else if (typeof data.image_url === 'string' && data.image_url.trim()) {
+      payload.image = data.image_url.trim();
+    }
 
     const res = await managerApi.menu.updateMenu(id, payload);
     if (res.success && res.data) {
+      this.invalidateCache();
       return { success: true, data: mapMenu(res.data) };
     }
 
@@ -132,17 +188,23 @@ class MenuService {
   }
 
   async deleteMenu(id: string): Promise<ApiResponseEnvelope<void>> {
+    this.invalidateCache();
     const res = await managerApi.menu.deleteMenu(id);
     return { success: res.success, error: res.error, data: undefined };
   }
 
   async toggleAvailable(id: string, isAvailable: boolean): Promise<ApiResponseEnvelope<Menu>> {
+    this.invalidateCache();
     const res = await managerApi.menu.toggleAvailability(id, !isAvailable);
     if (res.success && res.data) {
       return { success: true, data: mapMenu(res.data) };
     }
 
     return { success: false, error: res.error };
+  }
+
+  async toggleAvailability(id: string, isAvailable: boolean): Promise<ApiResponseEnvelope<Menu>> {
+    return this.toggleAvailable(id, isAvailable);
   }
 }
 

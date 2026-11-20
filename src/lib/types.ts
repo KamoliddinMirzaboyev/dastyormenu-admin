@@ -196,14 +196,36 @@ export function toTiyin(som: number): number {
   return Math.round(som * 100);
 }
 
-/** Rasm URL'ini to'g'ri formatlash */
+/** Rasm URL'ini to'g'ri formatlash (data URL, blob, absolute URL yoki media nisbiy yo'llari) */
 export function getImageUrl(imageUrl: string | null | undefined): string | null {
-  if (!imageUrl) return null;
-  
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return imageUrl;
+  if (!imageUrl || typeof imageUrl !== 'string') return null;
+  const trimmed = imageUrl.trim();
+  if (!trimmed) return null;
+
+  // 1. Base64 Data URL yoki Blob URL
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+    return trimmed;
   }
-  
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://dastroymenu.abboskhoja.uz';
-  return imageUrl.startsWith('/') ? `${baseUrl}${imageUrl}` : `${baseUrl}/${imageUrl}`;
+
+  // 2. To'liq absolute HTTP/HTTPS URL
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  // 3. Nisbiy yo'l (/media/... yoki media/...)
+  // Asosiy server origin'ini olish (/api/manager/ yo'llarisiz)
+  const rawBase =
+    import.meta.env.VITE_MANAGER_API_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    'https://dastroymenu.abboskhoja.uz';
+
+  let origin = 'https://dastroymenu.abboskhoja.uz';
+  try {
+    origin = new URL(rawBase).origin;
+  } catch {
+    origin = rawBase.replace(/\/api\/manager\/?.*$/, '').replace(/\/+$/, '');
+  }
+
+  const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${origin}${cleanPath}`;
 }

@@ -86,7 +86,7 @@ const StaffFormModal: React.FC<{
         password: data.password,
         full_name: data.full_name,
         role: data.role,
-        pin_code: data.role === 'chef' ? (data.password.length === 6 ? data.password : '123456') : undefined,
+        pin_code: data.role === 'chef' ? (data.password.length >= 6 ? data.password.slice(0, 6) : undefined) : undefined,
         monthly_salary: salaryTiyin,
         is_active: true,
       });
@@ -98,7 +98,7 @@ const StaffFormModal: React.FC<{
       } else {
         toastError(response.error?.message || 'Xodim qo\'shilmadi');
       }
-    } catch (error) {
+    } catch {
       toastError('Xatolik yuz berdi');
     }
   };
@@ -107,7 +107,7 @@ const StaffFormModal: React.FC<{
     <Dialog.Root open={open} onOpenChange={v => !v && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 animate-fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[#161616] border border-[#2A2A2A] rounded-xl p-6 z-50 shadow-2xl">
+        <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[#161616] border border-[#2A2A2A] rounded-xl p-6 z-50 shadow-2xl">
           <div className="flex items-center justify-between mb-5">
             <Dialog.Title className="text-base font-bold text-[#FAFAFA]">Yangi Xodim Qo'shish</Dialog.Title>
             <Dialog.Close className="text-[#A1A1AA] hover:text-[#FAFAFA] p-1.5 rounded-lg hover:bg-[#2A2A2A]"><X size={18} /></Dialog.Close>
@@ -207,7 +207,7 @@ const StaffPage: React.FC = () => {
       } else {
         toastError('Xodimlar ro\'yxati yuklanmadi');
       }
-    } catch (error) {
+    } catch {
       toastError('Xatolik yuz berdi');
     } finally {
       setLoading(false);
@@ -225,7 +225,7 @@ const StaffPage: React.FC = () => {
         success('Holat o\'zgartirildi');
         setStaff(prev => prev.map(s => s.id === id ? { ...s, is_active: !current } : s));
       }
-    } catch (e) {
+    } catch {
       toastError('Holatni o\'zgartirib bo\'lmadi');
     }
   };
@@ -240,7 +240,7 @@ const StaffPage: React.FC = () => {
       } else {
         toastError('Xodim o\'chirilmadi');
       }
-    } catch (error) {
+    } catch {
       toastError('Xatolik yuz berdi');
     }
   };

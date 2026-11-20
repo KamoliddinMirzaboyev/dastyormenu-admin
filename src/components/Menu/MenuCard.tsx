@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Pencil, Trash2, ImageIcon, Clock, TrendingUp, Package } from 'lucide-react';
 import { Menu, formatPrice, getImageUrl } from '../../lib/types';
@@ -16,9 +16,11 @@ export const MenuCard: React.FC<MenuCardProps> = ({
   onToggle,
   onDelete,
 }) => {
+  const [imgError, setImgError] = useState(false);
   const costPrice = menu.cost_price || Math.round(menu.price * 0.5);
   const margin = menu.price - costPrice;
   const marginPct = menu.price > 0 ? Math.round((margin / menu.price) * 100) : 0;
+  const finalImageUrl = getImageUrl(menu.image_url);
 
   return (
     <motion.div
@@ -30,14 +32,12 @@ export const MenuCard: React.FC<MenuCardProps> = ({
     >
       {/* Image Container */}
       <div className="relative h-44 bg-[#121212] overflow-hidden">
-        {menu.image_url ? (
+        {finalImageUrl && !imgError ? (
           <img
-            src={getImageUrl(menu.image_url) || ''}
+            src={finalImageUrl}
             alt={menu.name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            onError={e => {
-              (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&fit=crop';
-            }}
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-[#4A4A4A]">

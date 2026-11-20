@@ -11,11 +11,12 @@ import { CategoryModal } from '../../components/Menu/CategoryModal';
 import { MenuFormModal } from '../../components/Menu/MenuFormModal';
 import { ProductFormModal } from '../../components/Menu/ProductFormModal';
 import { MenuCard } from '../../components/Menu/MenuCard';
+import { resizeImage, fileToBase64 } from '../../lib/imageUploadService';
 
 const MenuPage: React.FC = () => {
   const { organization } = useAuthStore();
   const orgId = organization?.id ?? '';
-  const { menus, categories, loading, refetch, deleteMenu, toggleAvailability } = useMenu();
+  const { menus, categories, loading, isFetching, refetch, deleteMenu, toggleAvailability } = useMenu();
   const { success, error: toastError } = useToast();
 
   const [activeCat, setActiveCat] = useState<string>('all');
@@ -70,12 +71,12 @@ const MenuPage: React.FC = () => {
   };
 
   const handleUploadImage = async (file: File): Promise<string | null> => {
-    return new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(e.target?.result as string);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(file);
-    });
+    try {
+      const resized = await resizeImage(file, 1000, 1000, 0.85);
+      return await fileToBase64(resized);
+    } catch {
+      return null;
+    }
   };
 
   return (
@@ -88,6 +89,12 @@ const MenuPage: React.FC = () => {
             <span className="text-xs bg-[#242424] text-[#A1A1AA] px-2.5 py-0.5 rounded-full font-normal">
               {menus.length} ta umumiy
             </span>
+            {isFetching && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-[#F59E0B] bg-[#F59E0B]/10 border border-[#F59E0B]/20 px-2.5 py-0.5 rounded-full font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-ping" />
+                <span>Yangilanmoqda</span>
+              </span>
+            )}
           </h2>
           <p className="text-xs text-[#A1A1AA] mt-0.5">
             Oshxona taomlari, tayyor ichimliklar (Cola, suv), non va bar mahsulotlari
@@ -199,7 +206,7 @@ const MenuPage: React.FC = () => {
       </div>
 
       {/* Grid */}
-      {loading ? (
+      {loading && menus.length === 0 ? (
         <GridSkeleton count={8} />
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-[#A1A1AA] bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl animate-fade-in">

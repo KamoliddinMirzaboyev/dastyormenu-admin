@@ -94,9 +94,22 @@ const DashboardPage: React.FC = () => {
     loadData();
   }, []);
 
+  const refreshRealtime = async () => {
+    try {
+      const [oRes, tRes] = await Promise.all([
+        orderService.getOrders(),
+        tableService.getTables(),
+      ]);
+      if (oRes.success && oRes.data) setOrders(oRes.data);
+      if (tRes.success && tRes.data) setTables(tRes.data);
+    } catch (e) {
+      console.error('Realtime dashboard refresh error:', e);
+    }
+  };
+
   useRealtimeOrders({
-    onInsert: () => loadData(),
-    onUpdate: () => loadData(),
+    onInsert: () => refreshRealtime(),
+    onUpdate: () => refreshRealtime(),
   });
 
   // Today's Date String

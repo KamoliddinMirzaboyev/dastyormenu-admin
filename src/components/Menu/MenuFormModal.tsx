@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { menuSchema, type MenuFormData } from '../../lib/validators';
 import { Upload, X, ImageIcon, Link as LinkIcon } from 'lucide-react';
-import { Menu, Category } from '../../lib/types';
+import { Menu, Category, getImageUrl } from '../../lib/types';
 import Button from '../UI/Button';
 import { menuService } from '../../lib/menuService';
 import { useToast } from '../../lib/toast';
@@ -104,7 +104,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
       } else {
         toastError('Rasm yuklanmadi');
       }
-    } catch (error) {
+    } catch {
       toastError('Rasm yuklashda xatolik');
     } finally {
       setUploading(false);
@@ -126,7 +126,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
       : Math.round(data.price_som * 50);
 
     const sellingPriceTiyin = Math.round(data.price_som * 100);
-    const finalImage = imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';
+    const finalImage = imageUrl?.trim() || undefined;
 
     try {
       if (editItem) {
@@ -172,7 +172,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
           toastError('Taom qo\'shilmadi');
         }
       }
-    } catch (e) {
+    } catch {
       toastError('Xatolik yuz berdi');
     }
   };
@@ -186,7 +186,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
     <Dialog.Root open={open} onOpenChange={v => !v && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 animate-fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-[#161616] border border-[#2A2A2A] rounded-xl p-6 z-50 max-h-[92vh] overflow-y-auto shadow-2xl">
+        <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-[#161616] border border-[#2A2A2A] rounded-xl p-6 z-50 max-h-[92vh] overflow-y-auto shadow-2xl">
           <div className="flex items-center justify-between mb-5">
             <Dialog.Title className="text-base font-bold text-[#FAFAFA]">
               {editItem ? 'Taom Ma\'lumotlarini Tahrirlash' : 'Yangi Taom Qo\'shish'}
@@ -219,7 +219,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
                     type="url"
                     value={customUrlInput}
                     onChange={e => setCustomUrlInput(e.target.value)}
-                    placeholder="https://images.unsplash.com/photo-..."
+                    placeholder="https://example.com/taom-rasmi.jpg"
                     className="flex-1 bg-[#121212] border border-[#2A2A2A] rounded-lg px-2.5 py-1.5 text-xs text-[#FAFAFA] focus:outline-none focus:border-[#F59E0B]"
                   />
                   <button
@@ -239,7 +239,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
                 {imageUrl ? (
                   <>
                     <img
-                      src={imageUrl}
+                      src={getImageUrl(imageUrl) || imageUrl}
                       alt="preview"
                       className="w-full h-full object-cover"
                     />
