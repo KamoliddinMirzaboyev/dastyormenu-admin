@@ -1,255 +1,493 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { DollarSign, ShoppingBag, Clock, Users } from 'lucide-react';
-import StatCard from '../../components/UI/StatCard';
+import {
+  DollarSign, TrendingUp, Plus, Clock,
+  ArrowRight, Armchair, RotateCcw
+} from 'lucide-react';
 import StatusBadge from '../../components/UI/StatusBadge';
-import { useTodayStats } from '../../hooks/useOrders';
-import { Order, formatPrice } from '../../lib/types';
-import { useAuthStore } from '../../store/authStore';
+import { Order, Table, UserProfile, Menu, formatPrice } from '../../lib/types';
 import { Skeleton } from '../../components/UI/LoadingSkeleton';
+import { mockStore } from '../../lib/mockStore';
+import { AddExpenseModal } from '../../components/Finance/AddExpenseModal';
+import { NewOrderModal } from '../../components/Orders/NewOrderModal';
+import { useToast } from '../../lib/toast';
 
-// ─── Weekly chart data ────────────────────────────────────────────────────────
-const DAYS = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
-
-function getWeekDays() {
-  const today = new Date();
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() - 6 + i);
-    return { day: DAYS[d.getDay()], date: d.toISOString().split('T')[0] };
-  });
-}
-
-// ─── Hourly chart data ────────────────────────────────────────────────────────
 const HOURS = Array.from({ length: 14 }, (_, i) => `${i + 10}:00`);
 
-// ─── Custom tooltip ───────────────────────────────────────────────────────────
-const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) => {
-  if (active && payload?.length) {
+// Hourly Tooltip
+const HourlyTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
+  if (active && payload && payload.length) {
     return (
-      <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-btn px-3 py-2 text-xs">
-        <p className="text-[#A1A1AA] mb-1">{label}</p>
-        <p className="text-[#F59E0B] font-semibold">{formatPrice(payload[0].value)}</p>
+      <div className="bg-[#181818] border border-[#2E2E2E] rounded-xl px-3 py-2 text-xs shadow-xl">
+        <p className="text-[#A1A1AA] mb-0.5">{label}</p>
+        <p className="text-[#FAFAFA] font-bold">{payload[0].value} ta buyurtma</p>
       </div>
     );
   }
   return null;
 };
 
-const HourlyTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) => {
-  if (active && payload?.length) {
-    return (
-      <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-btn px-3 py-2 text-xs">
-        <p className="text-[#A1A1AA] mb-1">{label}</p>
-        <p className="text-[#F59E0B] font-semibold">{payload[0].value} buyurtma</p>
-      </div>
-    );
-  }
-  return null;
-};
-
-// ─── Component ────────────────────────────────────────────────────────────────
 const DashboardPage: React.FC = () => {
-  const { organization } = useAuthStore();
-  const orgId = organization?.id;
-  const { stats, loading: statsLoading } = useTodayStats();
+  const navigate = useNavigate();
+  const { success } = useToast();
 
-  const [weeklyData, setWeeklyData] = useState<{ day: string; revenue: number }[]>([]);
-  const [hourlyData, setHourlyData] = useState<{ hour: string; orders: number }[]>([]);
-  const [topMenus, setTopMenus] = useState<{ name: string; count: number }[]>([]);
-  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
-  const [chartsLoading, setChartsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
+  const [staff, setStaff] = useState<UserProfile[]>([]);
+  const [menus, setMenus] = useState<Menu[]>([]);
+
+  // Modals
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [showNewOrderModal, setShowNewOrderModal] = useState(false);
+  const [selectedTableForOrder, setSelectedTableForOrder] = useState<string | null>(null);
+
+  const loadData = () => {
+    setLoading(true);
+    const allOrders = mockStore.getOrders();
+    const allTables = mockStore.getTables();
+    const allStaff = mockStore.getStaff();
+    const allMenus = mockStore.getMenu();
+
+    setOrders(allOrders);
+    setTables(allTables);
+    setStaff(allStaff);
+    setMenus(allMenus);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (!orgId) return;
+    loadData();
+    const unsubscribe = mockStore.subscribe(() => {
+      loadData();
+    });
+    return () => unsubscribe();
+  }, []);
 
-    const fetchCharts = async () => {
-      setChartsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const weekDays = getWeekDays();
+  // Today's Date String
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
-      // Mock data
-      const ordersRes = { data: mockOrders };
-      const itemsRes = { data: mockOrderItems };
-      const recentRes = { data: mockOrders.map(o => ({
-        ...o,
-        table: mockTables.find(t => t.id === o.table_id),
-        order_items: mockOrderItems.filter(item => item.order_id === o.id),
-      })) };
+  // Today's Orders
+  const todayOrders = useMemo(() => {
+    return orders.filter(o => o.created_at.startsWith(todayStr));
+  }, [orders, todayStr]);
 
-      // Weekly revenue
-      const revenueByDay: Record<string, number> = {};
-      (ordersRes.data ?? []).forEach(o => {
-        const day = o.created_at.split('T')[0];
-        revenueByDay[day] = (revenueByDay[day] ?? 0) + o.total_amount;
-      });
-      setWeeklyData(weekDays.map(d => ({ day: d.day, revenue: revenueByDay[d.date] ?? 0 })));
+  // Today's completed orders
+  const todayCompleted = useMemo(() => {
+    return todayOrders.filter(o => o.status === 'completed');
+  }, [todayOrders]);
 
-      // Hourly orders (today)
-      const today = new Date().toISOString().split('T')[0];
-      const todayOrders = (ordersRes.data ?? []).filter(o => o.created_at.startsWith(today));
-      const countByHour: Record<string, number> = {};
-      todayOrders.forEach(o => {
-        const h = new Date(o.created_at).getHours();
-        const key = `${h}:00`;
-        countByHour[key] = (countByHour[key] ?? 0) + 1;
-      });
-      setHourlyData(HOURS.map(h => ({ hour: h, orders: countByHour[h] ?? 0 })));
+  // Today's turnover
+  const todayTurnover = useMemo(() => {
+    return todayCompleted.reduce((sum, o) => sum + o.total_amount, 0);
+  }, [todayCompleted]);
 
-      // Top menus from order_items
-      const menuCount: Record<string, number> = {};
-      (itemsRes.data ?? []).forEach(item => {
-        menuCount[item.menu_name] = (menuCount[item.menu_name] ?? 0) + item.quantity;
-      });
-      const sorted = Object.entries(menuCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
-      setTopMenus(sorted.map(([name, count]) => ({ name, count })));
+  // Average check today
+  const averageCheck = useMemo(() => {
+    return todayCompleted.length > 0 ? Math.round(todayTurnover / todayCompleted.length) : 0;
+  }, [todayCompleted, todayTurnover]);
 
-      setRecentOrders((recentRes.data as Order[]) ?? []);
-      setChartsLoading(false);
-    };
+  // Active orders (pending, cooking, ready)
+  const activeOrders = useMemo(() => {
+    return orders.filter(o => ['pending', 'cooking', 'ready'].includes(o.status));
+  }, [orders]);
 
-    fetchCharts();
-  }, [orgId]);
+  // Occupied tables
+  const occupiedTableIds = useMemo(() => {
+    return new Set(activeOrders.map(o => o.table_id));
+  }, [activeOrders]);
+
+  // Hourly Data calculation for today
+  const hourlyData = useMemo(() => {
+    const countByHour: Record<string, number> = {};
+    todayOrders.forEach(o => {
+      const h = new Date(o.created_at).getHours();
+      const key = `${h}:00`;
+      countByHour[key] = (countByHour[key] || 0) + 1;
+    });
+
+    return HOURS.map(h => ({ hour: h, orders: countByHour[h] || 0 }));
+  }, [todayOrders]);
 
   const maxHourly = Math.max(...hourlyData.map(d => d.orders), 1);
 
+  const handleResetDemo = () => {
+    if (confirm('Barcha demo ma\'lumotlarni boshlang\'ich holatga qaytarishni xohlaysizmi?')) {
+      mockStore.resetDemoData();
+      loadData();
+      success('Barcha ma\'lumotlar muvaffaqiyatli yangilandi!');
+    }
+  };
+
+  const handleUpdateOrderStatus = (orderId: string, status: Order['status']) => {
+    mockStore.updateOrderStatus(orderId, status);
+    success('Buyurtma holati yangilandi');
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Bugungi daromad" value={formatPrice(stats.todayRevenue)} change={stats.revenueChange} changeLabel="kechagiga nisbatan" icon={DollarSign} loading={statsLoading} />
-        <StatCard title="Buyurtmalar soni" value={stats.todayOrders} change={stats.ordersChange} changeLabel="bugun" icon={ShoppingBag} loading={statsLoading} />
-        <StatCard title="Faol buyurtmalar" value={stats.activeOrders} changeLabel="Jonli ma'lumot" icon={Clock} loading={statsLoading} />
-        <StatCard title="Mijozlar soni" value={stats.todayCustomers} changeLabel="Bugun" icon={Users} loading={statsLoading} />
+    <div className="space-y-6 animate-fade-in pb-10">
+      {/* Top Welcome & Operational Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+        <div>
+          <h2 className="text-xl font-bold text-[#FAFAFA] flex items-center gap-2">
+            <span>Bugungi Tezkor Boshqaruv</span>
+            <span className="w-2 h-2 rounded-full bg-[#F59E0B]" title="Jonli rejim" />
+          </h2>
+          <p className="text-xs text-[#A1A1AA] mt-0.5">
+            Bugungi sotuvlar, faol buyurtmalar va zaldagi stollar holati
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Detailed Reports Button */}
+          <button
+            onClick={() => navigate('/manager/reports')}
+            className="bg-[#1C1C1C] hover:bg-[#252525] border border-[#2E2E2E] text-[#FAFAFA] font-medium text-xs px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <span>To'liq Hisobotlar</span>
+            <ArrowRight size={14} className="text-[#A1A1AA]" />
+          </button>
+
+          {/* New Order Button */}
+          <button
+            onClick={() => setShowNewOrderModal(true)}
+            className="bg-[#F59E0B] hover:bg-[#D97706] text-black font-semibold text-xs px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm active:scale-95"
+          >
+            <Plus size={16} />
+            <span>Buyurtma Olish</span>
+          </button>
+
+          {/* Add Expense Button */}
+          <button
+            onClick={() => setShowAddExpense(true)}
+            className="bg-[#1C1C1C] hover:bg-[#252525] border border-[#2E2E2E] text-[#FAFAFA] font-medium text-xs px-3 py-2 rounded-xl transition-colors flex items-center gap-1.5"
+          >
+            <Plus size={14} className="text-[#A1A1AA]" />
+            <span>Xarajat</span>
+          </button>
+
+          {/* Reset Demo Button */}
+          <button
+            onClick={handleResetDemo}
+            title="Demo ma'lumotlarni qayta tiklash"
+            className="p-2 bg-[#1C1C1C] hover:bg-[#252525] border border-[#2E2E2E] rounded-xl text-[#71717A] hover:text-[#FAFAFA] transition-colors"
+          >
+            <RotateCcw size={15} />
+          </button>
+        </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Weekly revenue */}
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-card p-5">
-          <h3 className="text-sm font-semibold text-[#FAFAFA] mb-4">Haftalik daromad</h3>
-          {chartsLoading ? (
-            <Skeleton className="h-48 w-full" />
+      {/* 4 Clean Real-Time Operational Stat Cards for TODAY (Unified Professional Palette) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 1. Bugungi Tushum */}
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-xs font-semibold text-[#A1A1AA]">Bugungi Aylanma</span>
+            <div className="w-8 h-8 rounded-lg bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA]">
+              <DollarSign size={15} />
+            </div>
+          </div>
+          {loading ? (
+            <Skeleton className="h-7 w-28" />
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={weeklyData}>
-                <defs>
-                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2A" />
-                <XAxis dataKey="day" tick={{ fill: '#A1A1AA', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#A1A1AA', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 100000).toFixed(0)}K`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="revenue" stroke="#F59E0B" strokeWidth={2} fill="url(#revenueGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div>
+              <p className="text-xl font-bold text-[#FAFAFA] tracking-tight">
+                {formatPrice(todayTurnover)}
+              </p>
+              <p className="text-[11px] text-[#71717A] mt-1.5">
+                {todayCompleted.length} ta yopilgan buyurtma
+              </p>
+            </div>
           )}
         </div>
 
-        {/* Hourly orders */}
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-card p-5">
-          <h3 className="text-sm font-semibold text-[#FAFAFA] mb-4">Soatlik band vaqtlar</h3>
-          {chartsLoading ? (
-            <Skeleton className="h-48 w-full" />
+        {/* 2. Oshxona & Faol Buyurtmalar */}
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-xs font-semibold text-[#A1A1AA]">Oshxona & Jarayonda</span>
+            <div className="w-8 h-8 rounded-lg bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA]">
+              <Clock size={15} />
+            </div>
+          </div>
+          {loading ? (
+            <Skeleton className="h-7 w-28" />
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={hourlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2A" />
-                <XAxis dataKey="hour" tick={{ fill: '#A1A1AA', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#A1A1AA', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<HourlyTooltip />} />
-                <Bar dataKey="orders" radius={[4, 4, 0, 0]}
-                  fill="#2A2A2A"
-                  label={false}
+            <div>
+              <p className="text-xl font-bold text-[#FAFAFA] tracking-tight">
+                {activeOrders.length} ta buyurtma
+              </p>
+              <p className="text-[11px] text-[#71717A] mt-1.5">
+                Kutilmoqda yoki tayyorlanmoqda
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* 3. Stollar Bandligi */}
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-xs font-semibold text-[#A1A1AA]">Zal & Stollar Bandligi</span>
+            <div className="w-8 h-8 rounded-lg bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA]">
+              <Armchair size={15} />
+            </div>
+          </div>
+          {loading ? (
+            <Skeleton className="h-7 w-28" />
+          ) : (
+            <div>
+              <p className="text-xl font-bold text-[#FAFAFA] tracking-tight">
+                {occupiedTableIds.size} / {tables.length} band
+              </p>
+              <p className="text-[11px] text-[#71717A] mt-1.5">
+                {tables.length - occupiedTableIds.size} ta stol bo'sh
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* 4. O'rtacha Chek */}
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-xs font-semibold text-[#A1A1AA]">O'rtacha Chek (Bugun)</span>
+            <div className="w-8 h-8 rounded-lg bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA]">
+              <TrendingUp size={15} />
+            </div>
+          </div>
+          {loading ? (
+            <Skeleton className="h-7 w-28" />
+          ) : (
+            <div>
+              <p className="text-xl font-bold text-[#FAFAFA] tracking-tight">
+                {formatPrice(averageCheck)}
+              </p>
+              <p className="text-[11px] text-[#71717A] mt-1.5">
+                Bitta stol o'rtacha tushumi
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Operational 2-Column Split */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Left Column (7 cols): Hourly Activity & Tables Quick Grid */}
+        <div className="lg:col-span-7 space-y-5">
+          {/* Today's Peak Hours Activity Bar Chart */}
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-[#FAFAFA]">Bugungi Soatlik Bandlik</h3>
+                <p className="text-xs text-[#71717A]">Mijozlar eng ko'p keladigan vaqtlar</p>
+              </div>
+              <span className="text-[11px] bg-[#222222] text-[#A1A1AA] px-2.5 py-1 rounded-lg font-medium border border-[#2E2E2E]">
+                Maks: {maxHourly} ta
+              </span>
+            </div>
+
+            {loading ? (
+              <Skeleton className="h-48 w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={190}>
+                <BarChart data={hourlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#222222" />
+                  <XAxis dataKey="hour" tick={{ fill: '#71717A', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="orders" tick={{ fill: '#71717A', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip content={<HourlyTooltip />} />
+                  <Bar dataKey="orders" radius={[4, 4, 0, 0]} fill="#262626">
+                    {hourlyData.map((entry, index) => (
+                      <rect
+                        key={index}
+                        fill={entry.orders === maxHourly && entry.orders > 0 ? '#F59E0B' : '#2A2A2A'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Quick Table Grid (Interactive: 1-click Order Taking) */}
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3.5">
+              <div>
+                <h3 className="text-sm font-bold text-[#FAFAFA]">Stollar Xaritasi</h3>
+                <p className="text-xs text-[#71717A]">Stol ustiga bosib buyurtma oling</p>
+              </div>
+              <div className="flex items-center gap-3 text-xs">
+                <span className="flex items-center gap-1.5 text-[#71717A]">
+                  <span className="w-2 h-2 rounded-full bg-[#444444]" /> Bo'sh
+                </span>
+                <span className="flex items-center gap-1.5 text-[#A1A1AA]">
+                  <span className="w-2 h-2 rounded-full bg-[#F59E0B]" /> Band
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+              {tables.map(table => {
+                const isOccupied = occupiedTableIds.has(table.id);
+                return (
+                  <button
+                    key={table.id}
+                    onClick={() => {
+                      setSelectedTableForOrder(table.id);
+                    }}
+                    className={`p-3 rounded-xl border flex flex-col items-center justify-center transition-all duration-150 active:scale-95 ${
+                      isOccupied
+                        ? 'bg-[#F59E0B]/10 border-[#F59E0B]/30 text-[#FAFAFA]'
+                        : 'bg-[#141414] border-[#242424] hover:border-[#383838] text-[#A1A1AA]'
+                    }`}
+                  >
+                    <span className="text-base font-bold text-[#FAFAFA]">{table.table_number}</span>
+                    <span className={`text-[10px] font-semibold mt-0.5 ${isOccupied ? 'text-[#F59E0B]' : 'text-[#71717A]'}`}>
+                      {isOccupied ? 'Band' : 'Bo\'sh'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column (5 cols): Live Orders Stream & Quick Link to Reports */}
+        <div className="lg:col-span-5 space-y-5">
+          {/* Live Active Orders Stream */}
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-[#FAFAFA] flex items-center gap-2">
+                  <span>Jonli Buyurtmalar Oqimi</span>
+                  {activeOrders.length > 0 && (
+                    <span className="text-xs bg-[#242424] text-[#FAFAFA] border border-[#333] px-2 py-0.5 rounded-full font-semibold">
+                      {activeOrders.length}
+                    </span>
+                  )}
+                </h3>
+                <button
+                  onClick={() => navigate('/manager/orders')}
+                  className="text-xs text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors font-medium"
                 >
-                  {hourlyData.map((entry, index) => (
-                    <rect key={index} fill={entry.orders === maxHourly && entry.orders > 0 ? '#F59E0B' : '#3A3A3A'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+                  Barchasi ➔
+                </button>
+              </div>
+
+              {loading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+                </div>
+              ) : orders.length === 0 ? (
+                <p className="text-xs text-[#71717A] text-center py-10">Buyurtmalar mavjud emas</p>
+              ) : (
+                <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                  {orders.slice(0, 6).map(order => {
+                    const mins = Math.round((Date.now() - new Date(order.created_at).getTime()) / 60000);
+                    const tableNum = (order.table as { table_number?: number } | undefined)?.table_number ?? '?';
+                    const itemsText = (order.order_items || []).map(i => `${i.menu_name} (x${i.quantity})`).join(', ');
+
+                    return (
+                      <div
+                        key={order.id}
+                        className="p-3 bg-[#141414] rounded-xl border border-[#242424] hover:border-[#333333] transition-colors space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-lg bg-[#222222] text-[#FAFAFA] text-xs font-bold flex items-center justify-center">
+                              {tableNum}
+                            </span>
+                            <span className="text-xs font-semibold text-[#FAFAFA]">{tableNum}-stol</span>
+                            <span className="text-[10px] text-[#71717A]">• {mins < 1 ? 'Hozirgina' : `${mins}m oldin`}</span>
+                          </div>
+                          <StatusBadge status={order.status} />
+                        </div>
+
+                        <p className="text-[11px] text-[#A1A1AA] line-clamp-1 truncate" title={itemsText}>
+                          {itemsText || 'Buyurtma tarkibi'}
+                        </p>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-[#202020]">
+                          <span className="text-xs font-semibold text-[#FAFAFA]">{formatPrice(order.total_amount)}</span>
+                          
+                          {/* Clean Workflow Action button */}
+                          {order.status === 'pending' && (
+                            <button
+                              onClick={() => handleUpdateOrderStatus(order.id, 'cooking')}
+                              className="text-[10px] bg-[#222222] hover:bg-[#2A2A2A] text-[#FAFAFA] border border-[#333] px-2.5 py-1 rounded-lg font-medium transition-colors"
+                            >
+                              Oshxonaga
+                            </button>
+                          )}
+                          {order.status === 'cooking' && (
+                            <button
+                              onClick={() => handleUpdateOrderStatus(order.id, 'ready')}
+                              className="text-[10px] bg-[#F59E0B]/15 hover:bg-[#F59E0B]/25 text-[#F59E0B] border border-[#F59E0B]/30 px-2.5 py-1 rounded-lg font-medium transition-colors"
+                            >
+                              Tayyor
+                            </button>
+                          )}
+                          {order.status === 'ready' && (
+                            <button
+                              onClick={() => handleUpdateOrderStatus(order.id, 'completed')}
+                              className="text-[10px] bg-[#222222] hover:bg-[#2A2A2A] text-[#FAFAFA] border border-[#333] px-2.5 py-1 rounded-lg font-medium transition-colors"
+                            >
+                              Yopish
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Banner: Jump to Detailed Reports */}
+          <div
+            onClick={() => navigate('/manager/reports')}
+            className="cursor-pointer bg-[#1A1A1A] hover:bg-[#202020] border border-[#2A2A2A] hover:border-[#383838] rounded-xl p-5 transition-all flex items-center justify-between shadow-sm group"
+          >
+            <div>
+              <p className="text-xs font-semibold text-[#FAFAFA] flex items-center gap-1.5">
+                <span>To'liq Moliya & Mahsulotlar Tahlili</span>
+                <ArrowRight size={13} className="text-[#71717A] group-hover:translate-x-1 transition-transform" />
+              </p>
+              <p className="text-[11px] text-[#71717A] mt-1">
+                Davriy aylanma, tan narxlar, oylik maoshlar, ko'p va sekin ketayotgan taomlar
+              </p>
+            </div>
+            <div className="w-9 h-9 rounded-lg bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA] shrink-0 ml-3">
+              <TrendingUp size={16} />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Bottom panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Top 5 menus */}
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-card p-5">
-          <h3 className="text-sm font-semibold text-[#FAFAFA] mb-4">Eng ko'p buyurtma qilingan taomlar</h3>
-          {chartsLoading ? (
-            <div className="space-y-3">
-              {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-8 w-full" />)}
-            </div>
-          ) : topMenus.length === 0 ? (
-            <p className="text-[#A1A1AA] text-sm text-center py-8">Ma'lumot yo'q</p>
-          ) : (
-            <div className="space-y-3">
-              {topMenus.map((item, i) => {
-                const medals = ['🥇', '🥈', '🥉'];
-                const maxCount = topMenus[0]?.count ?? 1;
-                const pct = Math.round((item.count / maxCount) * 100);
-                return (
-                  <div key={item.name} className="flex items-center gap-3">
-                    <span className="text-base w-6 shrink-0">{medals[i] ?? `${i + 1}.`}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm text-[#FAFAFA] truncate">{item.name}</span>
-                        <span className="text-xs text-[#A1A1AA] ml-2 shrink-0">{item.count} marta</span>
-                      </div>
-                      <div className="h-1.5 bg-[#2A2A2A] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#F59E0B] rounded-full transition-all" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+      {/* Add Expense Modal */}
+      <AddExpenseModal
+        open={showAddExpense}
+        onClose={() => setShowAddExpense(false)}
+        onExpenseAdded={loadData}
+      />
 
-        {/* Recent orders */}
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-card p-5">
-          <h3 className="text-sm font-semibold text-[#FAFAFA] mb-4">Oxirgi buyurtmalar</h3>
-          {chartsLoading ? (
-            <div className="space-y-2">
-              {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-10 w-full" />)}
-            </div>
-          ) : recentOrders.length === 0 ? (
-            <p className="text-[#A1A1AA] text-sm text-center py-8">Buyurtmalar yo'q</p>
-          ) : (
-            <div className="space-y-2">
-              {recentOrders.slice(0, 8).map(order => {
-                const mins = Math.round((Date.now() - new Date(order.created_at).getTime()) / 60000);
-                const tableNum = (order.table as { table_number?: number } | undefined)?.table_number ?? '?';
-                const itemCount = order.order_items?.length ?? 0;
-                return (
-                  <div key={order.id} className="flex items-center gap-3 py-2 border-b border-[#2A2A2A]/50 last:border-0">
-                    <div className="w-8 h-8 bg-[#2A2A2A] rounded-btn flex items-center justify-center shrink-0">
-                      <span className="text-xs font-bold text-[#FAFAFA]">{tableNum}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-[#A1A1AA]">{itemCount} ta taom</span>
-                        <span className="text-xs font-medium text-[#FAFAFA]">{formatPrice(order.total_amount)}</span>
-                      </div>
-                    </div>
-                    <StatusBadge status={order.status} />
-                    <span className="text-xs text-[#A1A1AA] shrink-0">{mins} min</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* New Order Modal (Waiter Take Order) */}
+      {(showNewOrderModal || selectedTableForOrder) && (
+        <NewOrderModal
+          open={showNewOrderModal || !!selectedTableForOrder}
+          onClose={() => {
+            setShowNewOrderModal(false);
+            setSelectedTableForOrder(null);
+          }}
+          tables={tables}
+          staff={staff}
+          menu={menus}
+          initialTableId={selectedTableForOrder || undefined}
+          onOrderCreated={loadData}
+        />
+      )}
     </div>
   );
 };

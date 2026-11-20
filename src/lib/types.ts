@@ -1,7 +1,6 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type UserRole = 'super_admin' | 'manager' | 'chef' | 'waiter';
-export type SubscriptionPlan = 'trial' | 'basic' | 'pro' | 'enterprise';
 export type OrderStatus = 'pending' | 'cooking' | 'ready' | 'completed' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
@@ -12,11 +11,6 @@ export interface Organization {
   logo_url?: string | null;
   address?: string | null;
   phone?: string | null;
-  subscription_plan?: SubscriptionPlan;
-  subscription_status?: string;
-  subscription_expires_at?: string | null;
-  trial_ends_at?: string | null;
-  monthly_price?: number;
   role?: string;
   is_active: boolean;
   created_at?: string;
@@ -33,6 +27,8 @@ export interface UserProfile {
   first_name?: string;
   last_name?: string;
   pin_code?: string;
+  monthly_salary?: number; // tiyin (oylik maoshi)
+  salary_type?: 'monthly' | 'daily' | 'percentage';
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
@@ -58,7 +54,8 @@ export interface Menu {
   name: string;
   description: string | null;
   image_url: string | null;
-  price: number; // tiyin
+  price: number; // sotilish narxi (tiyin)
+  cost_price?: number; // tan narxi (tiyin)
   cook_time_minutes: number;
   ingredients: string | null;
   is_available: boolean;
@@ -70,7 +67,6 @@ export interface Table {
   id: string;
   organization_id?: string;
   table_number: number;
-  qr_code_id?: string; // Optional, may not be returned by backend
   assigned_waiter_id?: string | null;
   waiter_name?: string | null;
   is_active: boolean;
@@ -102,7 +98,8 @@ export interface OrderItem {
   order_id: string;
   menu_id: string;
   menu_name: string;
-  menu_price: number; // tiyin
+  menu_price: number; // sotilish narxi (tiyin)
+  cost_price?: number; // tan narxi (tiyin)
   quantity: number;
   modifications: string | null;
   item_status: string;
@@ -129,11 +126,26 @@ export interface Notification {
   created_at: string;
 }
 
+export type ExpenseCategory = 'ingredients' | 'salary' | 'utilities' | 'rent' | 'household' | 'other';
+
+export interface Expense {
+  id: string;
+  organization_id: string;
+  category: ExpenseCategory;
+  category_label: string;
+  title: string;
+  amount: number; // tiyin
+  date: string; // YYYY-MM-DD
+  created_at: string;
+  note?: string;
+  created_by?: string;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Tiyinni so'mga o'girish va formatlash */
 export function formatPrice(tiyin: number): string {
-  return (tiyin / 100).toLocaleString('uz-UZ') + " so'm";
+  return Math.round(tiyin / 100).toLocaleString('uz-UZ') + " so'm";
 }
 
 /** So'mni tiyinga o'girish (saqlash uchun) */

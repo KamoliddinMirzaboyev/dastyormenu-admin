@@ -1,11 +1,11 @@
-// ─── Table Service ────────────────────────────────────────────────────────────
+// ─── Table Service (Demo / Mock Mode) ─────────────────────────────────────────
 
-import { apiClient, ApiResponse } from './api';
-import { PaginatedResponse } from './apiTypes';
+import { ApiResponse } from './api';
 import { Table } from './types';
+import { mockStore } from './mockStore';
 
 export interface CreateTableRequest {
-  organization: string;
+  organization?: string;
   table_number: number;
   assigned_waiter?: string;
   is_active?: boolean;
@@ -18,67 +18,52 @@ export interface UpdateTableRequest {
 }
 
 class TableService {
-  /**
-   * Get all tables (handles paginated response)
-   */
   async getTables(): Promise<ApiResponse<Table[]>> {
-    const response = await apiClient.get<PaginatedResponse<Table>>('/api/tables/');
-    
-    if (response.success && response.data) {
-      // Extract results from paginated response
-      return {
-        success: true,
-        data: response.data.results,
-      };
-    }
-    
-    return response as ApiResponse<Table[]>;
+    const data = mockStore.getTables();
+    return { success: true, data };
   }
 
-  /**
-   * Create new table
-   */
   async createTable(data: CreateTableRequest): Promise<ApiResponse<Table>> {
-    console.log('🔵 Creating table:', data);
-    
-    return apiClient.post('/api/tables/', {
-      organization: data.organization,
-      table_number: data.table_number,
-      assigned_waiter: data.assigned_waiter || null,
-      is_active: data.is_active !== undefined ? data.is_active : true,
-    });
+    const table = mockStore.createTable(data.table_number, data.assigned_waiter);
+    return { success: true, data: table };
   }
 
-  /**
-   * Update table
-   */
+  async createTablesBulk(count: number): Promise<ApiResponse<Table[]>> {
+    const tables = mockStore.createTablesBulk(count);
+    return { success: true, data: tables };
+  }
+
   async updateTable(id: string, data: UpdateTableRequest): Promise<ApiResponse<Table>> {
-    return apiClient.patch(`/api/tables/${id}/`, data);
+    const updated = mockStore.updateTable(id, {
+      table_number: data.table_number,
+      assigned_waiter_id: data.assigned_waiter,
+      is_active: data.is_active,
+    });
+    if (!updated) {
+      return { success: false, error: { message: 'Stol topilmadi' } };
+    }
+    return { success: true, data: updated };
   }
 
-  /**
-   * Delete table
-   */
   async deleteTable(id: string): Promise<ApiResponse<void>> {
-    return apiClient.delete(`/api/tables/${id}/`);
+    mockStore.deleteTable(id);
+    return { success: true, data: undefined };
   }
 
-  /**
-   * Assign waiter to table
-   */
   async assignWaiter(tableId: string, waiterId: string | null): Promise<ApiResponse<Table>> {
-    return apiClient.patch(`/api/tables/${tableId}/`, {
-      assigned_waiter: waiterId,
-    });
+    const updated = mockStore.assignWaiterToTable(tableId, waiterId);
+    if (!updated) {
+      return { success: false, error: { message: 'Stol topilmadi' } };
+    }
+    return { success: true, data: updated };
   }
 
-  /**
-   * Toggle table active status
-   */
   async toggleActive(id: string, isActive: boolean): Promise<ApiResponse<Table>> {
-    return apiClient.patch(`/api/tables/${id}/`, {
-      is_active: !isActive,
-    });
+    const updated = mockStore.updateTable(id, { is_active: !isActive });
+    if (!updated) {
+      return { success: false, error: { message: 'Stol topilmadi' } };
+    }
+    return { success: true, data: updated };
   }
 }
 

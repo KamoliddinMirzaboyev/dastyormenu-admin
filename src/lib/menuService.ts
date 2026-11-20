@@ -1,14 +1,15 @@
-// ─── Menu Service ─────────────────────────────────────────────────────────────
+// ─── Menu Service (Demo / Mock Mode) ──────────────────────────────────────────
 
-import { apiClient, ApiResponse } from './api';
-import { PaginatedResponse } from './apiTypes';
+import { ApiResponse } from './api';
 import { Menu } from './types';
+import { mockStore } from './mockStore';
 
 export interface CreateMenuRequest {
   name: string;
   description?: string;
-  image?: File | string; // Changed from image_url to image
+  image?: File | string;
   price: number; // tiyin
+  cost_price?: number; // tiyin
   category: string;
   cook_time_minutes: number;
   ingredients?: string;
@@ -20,8 +21,9 @@ export interface UpdateMenuRequest {
   category?: string;
   name?: string;
   description?: string;
-  image?: File | string; // Changed from image_url to image
+  image?: File | string;
   price?: number; // tiyin
+  cost_price?: number; // tiyin
   cook_time_minutes?: number;
   ingredients?: string;
   is_available?: boolean;
@@ -29,126 +31,68 @@ export interface UpdateMenuRequest {
 }
 
 class MenuService {
-  /**
-   * Get all menus (handles paginated response)
-   */
-  async getMenus(): Promise<ApiResponse<Menu[]>> {
-    const response = await apiClient.get<PaginatedResponse<Menu>>('/api/menu/');
-    
-    if (response.success && response.data) {
-      // Extract results from paginated response
-      return {
-        success: true,
-        data: response.data.results,
-      };
-    }
-    
-    return response as ApiResponse<Menu[]>;
+  async getMenus(categoryId?: string): Promise<ApiResponse<Menu[]>> {
+    const data = mockStore.getMenu(categoryId);
+    return { success: true, data };
   }
 
-  /**
-   * Create new menu item
-   */
   async createMenu(data: CreateMenuRequest): Promise<ApiResponse<Menu>> {
-    const formData = new FormData();
-    
-    formData.append('name', data.name);
-    formData.append('category', data.category);
-    formData.append('price', data.price.toString());
-    formData.append('cook_time_minutes', data.cook_time_minutes.toString());
-    
-    if (data.description) formData.append('description', data.description);
-    if (data.ingredients) formData.append('ingredients', data.ingredients);
-    if (data.is_available !== undefined) formData.append('is_available', data.is_available.toString());
-    if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
-    
-    // Handle image - backend expects 'image' field with File
-    if (data.image) {
-      if (data.image instanceof File) {
-        console.log('📸 Uploading image file:', data.image.name, data.image.type, data.image.size);
-        formData.append('image', data.image, data.image.name);
-      } else if (typeof data.image === 'string') {
-        console.log('📸 Image URL (string):', data.image);
-        formData.append('image', data.image);
-      }
-    } else {
-      console.log('📸 No image provided');
+    let imageUrl = typeof data.image === 'string' ? data.image : null;
+    if (!imageUrl) {
+      imageUrl = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';
     }
 
-    console.log('🔵 Creating menu with FormData');
-    // Log FormData contents
-    for (const [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`  ${key}: [File] ${value.name} (${value.size} bytes)`);
-      } else {
-        console.log(`  ${key}: ${value}`);
-      }
-    }
+    const created = mockStore.createMenu({
+      name: data.name,
+      description: data.description,
+      image_url: imageUrl,
+      price: data.price,
+      cost_price: data.cost_price,
+      category_id: data.category,
+      cook_time_minutes: data.cook_time_minutes,
+      ingredients: data.ingredients,
+      is_available: data.is_available,
+      sort_order: data.sort_order,
+    });
 
-    return apiClient.post('/api/menu/', formData);
+    return { success: true, data: created };
   }
 
-  /**
-   * Update menu item
-   */
   async updateMenu(id: string, data: UpdateMenuRequest): Promise<ApiResponse<Menu>> {
-    console.log('🔵 menuService.updateMenu called:', { id, data });
-    
-    const formData = new FormData();
-    
-    if (data.category) formData.append('category', data.category);
-    if (data.name) formData.append('name', data.name);
-    if (data.description !== undefined) formData.append('description', data.description);
-    if (data.price !== undefined) formData.append('price', data.price.toString());
-    if (data.cook_time_minutes !== undefined) formData.append('cook_time_minutes', data.cook_time_minutes.toString());
-    if (data.ingredients !== undefined) formData.append('ingredients', data.ingredients);
-    if (data.is_available !== undefined) formData.append('is_available', data.is_available.toString());
-    if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
-    
-    // Handle image
-    if (data.image) {
-      if (data.image instanceof File) {
-        console.log('📸 Updating with image file:', data.image.name, data.image.type, data.image.size);
-        formData.append('image', data.image, data.image.name);
-      } else if (typeof data.image === 'string') {
-        console.log('📸 Updating with image URL (string):', data.image);
-        formData.append('image', data.image);
-      }
-    } else {
-      console.log('📸 No new image provided for update');
-    }
+    const patch: Partial<Menu> = {};
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.description !== undefined) patch.description = data.description;
+    if (data.price !== undefined) patch.price = data.price;
+    if (data.cost_price !== undefined) patch.cost_price = data.cost_price;
+    if (data.category !== undefined) patch.category_id = data.category;
+    if (data.cook_time_minutes !== undefined) patch.cook_time_minutes = data.cook_time_minutes;
+    if (data.ingredients !== undefined) patch.ingredients = data.ingredients;
+    if (data.is_available !== undefined) patch.is_available = data.is_available;
+    if (data.sort_order !== undefined) patch.sort_order = data.sort_order;
+    if (typeof data.image === 'string') patch.image_url = data.image;
 
-    console.log('🔵 Updating menu with FormData:');
-    // Log FormData contents
-    for (const [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`  ${key}: [File] ${value.name} (${value.size} bytes)`);
-      } else {
-        console.log(`  ${key}: ${value}`);
-      }
+    const updated = mockStore.updateMenu(id, patch);
+    if (!updated) {
+      return { success: false, error: { message: 'Taom topilmadi' } };
     }
-
-    const response = await apiClient.patch(`/api/menu/${id}/`, formData);
-    console.log('📡 Update response:', response);
-    
-    return response;
+    return { success: true, data: updated };
   }
 
-  /**
-   * Delete menu item
-   */
   async deleteMenu(id: string): Promise<ApiResponse<void>> {
-    return apiClient.delete(`/api/menu/${id}/`);
+    mockStore.deleteMenu(id);
+    return { success: true, data: undefined };
   }
 
-  /**
-   * Toggle menu availability
-   */
-  async toggleAvailability(id: string, isAvailable: boolean): Promise<ApiResponse<Menu>> {
-    const formData = new FormData();
-    formData.append('is_available', (!isAvailable).toString());
+  async toggleAvailable(id: string, isAvailable: boolean): Promise<ApiResponse<Menu>> {
+    const updated = mockStore.updateMenu(id, { is_available: !isAvailable });
+    if (!updated) {
+      return { success: false, error: { message: 'Taom topilmadi' } };
+    }
+    return { success: true, data: updated };
+  }
 
-    return apiClient.patch(`/api/menu/${id}/`, formData);
+  async toggleAvailability(id: string, current: boolean): Promise<ApiResponse<Menu>> {
+    return this.toggleAvailable(id, current);
   }
 }
 

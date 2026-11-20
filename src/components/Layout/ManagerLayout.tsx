@@ -7,8 +7,9 @@ const pageTitles: Record<string, string> = {
   '/manager':          'Bosh sahifa',
   '/manager/orders':   'Buyurtmalar',
   '/manager/menu':     'Menyu',
-  '/manager/tables':   'Stollar va QR',
+  '/manager/tables':   'Stollar',
   '/manager/staff':    'Xodimlar',
+  '/manager/reports':  'Moliya va Savdo Hisobotlari',
   '/manager/settings': 'Sozlamalar',
 };
 

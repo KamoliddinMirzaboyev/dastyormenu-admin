@@ -40,6 +40,11 @@ export const menuSchema = z.object({
     .number({ invalid_type_error: 'Narxni kiriting' })
     .min(MENU_LIMITS.priceMin, `Narx kamida ${MENU_LIMITS.priceMin} so'm bo'lishi kerak`)
     .max(MENU_LIMITS.priceMax, `Narx 10,000,000 so'mdan oshmasligi kerak`),
+  cost_price_som: z
+    .number({ invalid_type_error: 'Tan narxini kiriting' })
+    .min(0, "Tan narxi manfiy bo'lishi mumkin emas")
+    .max(MENU_LIMITS.priceMax, `Tan narxi 10,000,000 so'mdan oshmasligi kerak`)
+    .optional(),
   description: z.string().max(MENU_LIMITS.descMax, `Tavsif ${MENU_LIMITS.descMax} ta belgidan oshmasligi kerak`).optional(),
   ingredients: z.string().max(MENU_LIMITS.ingredientsMax, `Tarkib ${MENU_LIMITS.ingredientsMax} ta belgidan oshmasligi kerak`).optional(),
   cook_time_minutes: z
@@ -61,6 +66,10 @@ export const staffSchema = z.object({
     .min(STAFF_LIMITS.usernameMin, `Login kamida ${STAFF_LIMITS.usernameMin} ta belgidan iborat bo'lishi kerak`)
     .regex(/^[a-z0-9_]+$/, 'Faqat kichik harflar, raqamlar va _ belgisidan foydalaning'),
   password: z.string().min(STAFF_LIMITS.passwordMin, `Parol kamida ${STAFF_LIMITS.passwordMin} ta belgidan iborat bo'lishi kerak`),
+  monthly_salary_som: z
+    .number({ invalid_type_error: 'Oylik maoshni kiriting' })
+    .min(0, "Maosh manfiy bo'lishi mumkin emas")
+    .optional(),
 });
 
 export type StaffFormData = z.infer<typeof staffSchema>;

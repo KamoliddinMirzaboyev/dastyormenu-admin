@@ -39,7 +39,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       return response.error?.message || 'Login yoki parol noto\'g\'ri';
     } catch (error) {
       console.error('Login error:', error);
-      return 'Serverga ulanishda xatolik';
+      return 'Xatolik yuz berdi';
     }
   },
 
@@ -49,58 +49,27 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   loadProfile: async () => {
-    console.log('🔵 Loading profile from localStorage...');
     set({ isLoading: true });
 
     try {
-      // Check if token exists
       const token = authService.getToken();
-      console.log('🔑 Token exists:', !!token);
-      
       if (!token) {
-        console.log('❌ No token found, user not authenticated');
         set({ user: null, organization: null, isLoading: false });
         return;
       }
 
-      // Load from localStorage
       const stored = authService.getStoredAuth();
-      console.log('💾 Stored auth data:', stored);
-      
       if (stored && stored.user && stored.organization) {
-        console.log('✅ Setting user from localStorage');
         set({ 
           user: stored.user, 
           organization: stored.organization, 
           isLoading: false 
         });
-
-        // Verify with API in background (don't block UI)
-        // Only clear auth if token is actually invalid (401)
-        authService.verifyAuth().then(isValid => {
-          console.log('🔐 Token verification result:', isValid);
-          if (!isValid) {
-            console.log('❌ Token invalid (401), logging out');
-            set({ user: null, organization: null });
-          } else {
-            console.log('✅ Token valid, updating user data');
-            // Refresh user data from API
-            const updated = authService.getStoredAuth();
-            if (updated) {
-              set({ user: updated.user, organization: updated.organization });
-            }
-          }
-        }).catch(error => {
-          console.error('⚠️ Verification error (keeping user logged in):', error);
-          // Don't clear auth on network error, keep localStorage data
-        });
       } else {
-        console.log('❌ No stored auth data found');
         set({ user: null, organization: null, isLoading: false });
       }
     } catch (error) {
-      console.error('❌ Load profile error:', error);
-      // Don't clear localStorage on error
+      console.error('Load profile error:', error);
       set({ isLoading: false });
     }
   },

@@ -1,11 +1,11 @@
-// ─── Category Service ─────────────────────────────────────────────────────────
+// ─── Category Service (Demo / Mock Mode) ──────────────────────────────────────
 
-import { apiClient, ApiResponse } from './api';
-import { PaginatedResponse } from './apiTypes';
+import { ApiResponse } from './api';
 import { Category } from './types';
+import { mockStore } from './mockStore';
 
 export interface CreateCategoryRequest {
-  organization: string;
+  organization?: string;
   name: string;
   icon?: string;
   sort_order?: number;
@@ -20,74 +20,31 @@ export interface UpdateCategoryRequest {
 }
 
 class CategoryService {
-  /**
-   * Get all categories (handles paginated response)
-   */
   async getCategories(): Promise<ApiResponse<Category[]>> {
-    const response = await apiClient.get<PaginatedResponse<Category>>('/api/categories/');
-    
-    if (response.success && response.data) {
-      // Extract results from paginated response
-      return {
-        success: true,
-        data: response.data.results,
-      };
-    }
-    
-    return response as ApiResponse<Category[]>;
+    const data = mockStore.getCategories();
+    return { success: true, data };
   }
 
-  /**
-   * Create new category
-   */
   async createCategory(data: CreateCategoryRequest): Promise<ApiResponse<Category>> {
-    // Use FormData for multipart/form-data
-    const formData = new FormData();
-    formData.append('organization', data.organization);
-    formData.append('name', data.name);
-    if (data.icon) formData.append('icon', data.icon);
-    if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
-    if (data.is_active !== undefined) formData.append('is_active', data.is_active.toString());
-
-    return apiClient.post('/api/categories/', formData, {
-      headers: {
-        // Don't set Content-Type, let browser set it with boundary
-      }
+    const created = mockStore.createCategory({
+      name: data.name,
+      icon: data.icon,
+      sort_order: data.sort_order,
     });
+    return { success: true, data: created };
   }
 
-  /**
-   * Update category
-   */
   async updateCategory(id: string, data: UpdateCategoryRequest): Promise<ApiResponse<Category>> {
-    const formData = new FormData();
-    if (data.name) formData.append('name', data.name);
-    if (data.icon) formData.append('icon', data.icon);
-    if (data.sort_order !== undefined) formData.append('sort_order', data.sort_order.toString());
-    if (data.is_active !== undefined) formData.append('is_active', data.is_active.toString());
-
-    return apiClient.patch(`/api/categories/${id}/`, formData, {
-      headers: {}
-    });
+    const updated = mockStore.updateCategory(id, data);
+    if (!updated) {
+      return { success: false, error: { message: 'Kategoriya topilmadi' } };
+    }
+    return { success: true, data: updated };
   }
 
-  /**
-   * Delete category
-   */
   async deleteCategory(id: string): Promise<ApiResponse<void>> {
-    return apiClient.delete(`/api/categories/${id}/`);
-  }
-
-  /**
-   * Toggle category active status
-   */
-  async toggleActive(id: string, isActive: boolean): Promise<ApiResponse<Category>> {
-    const formData = new FormData();
-    formData.append('is_active', (!isActive).toString());
-
-    return apiClient.patch(`/api/categories/${id}/`, formData, {
-      headers: {}
-    });
+    mockStore.deleteCategory(id);
+    return { success: true, data: undefined };
   }
 }
 
