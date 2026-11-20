@@ -20,7 +20,7 @@ import {
 } from './mockData';
 import { queryClient } from './queryClient';
 
-const STORAGE_KEY = 'dastyor_mock_store_v1';
+const STORAGE_KEY = 'dastyor_mock_store_v2';
 
 interface StoreData {
   organization: Organization;
@@ -186,6 +186,9 @@ class MockStore {
 
   createMenu(item: {
     name: string;
+    item_type?: Menu['item_type'];
+    unit?: Menu['unit'];
+    unit_amount?: Menu['unit_amount'];
     description?: string;
     image_url?: string | null;
     price: number;
@@ -200,6 +203,9 @@ class MockStore {
       id: `menu-${Date.now()}`,
       organization_id: this.data.organization.id,
       category_id: item.category_id,
+      item_type: item.item_type || 'dish',
+      unit: item.unit,
+      unit_amount: item.unit_amount,
       name: item.name,
       description: item.description || null,
       image_url: item.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80',

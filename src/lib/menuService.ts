@@ -1,11 +1,14 @@
 // ─── Menu Service (Demo / Mock Mode) ──────────────────────────────────────────
 
 import { ApiResponse } from './api';
-import { Menu } from './types';
+import { Menu, MenuItemType } from './types';
 import { mockStore } from './mockStore';
 
 export interface CreateMenuRequest {
   name: string;
+  item_type?: MenuItemType;
+  unit?: string;
+  unit_amount?: number | string;
   description?: string;
   image?: File | string;
   price: number; // tiyin
@@ -19,6 +22,9 @@ export interface CreateMenuRequest {
 
 export interface UpdateMenuRequest {
   category?: string;
+  item_type?: MenuItemType;
+  unit?: string;
+  unit_amount?: number | string;
   name?: string;
   description?: string;
   image?: File | string;
@@ -44,6 +50,9 @@ class MenuService {
 
     const created = mockStore.createMenu({
       name: data.name,
+      item_type: data.item_type,
+      unit: data.unit,
+      unit_amount: data.unit_amount,
       description: data.description,
       image_url: imageUrl,
       price: data.price,
@@ -61,6 +70,9 @@ class MenuService {
   async updateMenu(id: string, data: UpdateMenuRequest): Promise<ApiResponse<Menu>> {
     const patch: Partial<Menu> = {};
     if (data.name !== undefined) patch.name = data.name;
+    if (data.item_type !== undefined) patch.item_type = data.item_type;
+    if (data.unit !== undefined) patch.unit = data.unit;
+    if (data.unit_amount !== undefined) patch.unit_amount = data.unit_amount;
     if (data.description !== undefined) patch.description = data.description;
     if (data.price !== undefined) patch.price = data.price;
     if (data.cost_price !== undefined) patch.cost_price = data.cost_price;

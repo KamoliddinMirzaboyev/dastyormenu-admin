@@ -429,16 +429,20 @@ export const initialMenu: Menu[] = [
     sort_order: 19,
   },
 
-  // Ichimliklar
+  // Ichimliklar & Tayyor Mahsulotlar (Bar)
   {
     id: 'menu-20',
     organization_id: 'org-demo-001',
     category_id: 'cat-6',
-    name: 'Ko\'k Choy Limon va Asal bilan (Choynak)',
+    item_type: 'product',
+    unit: 'choynak',
+    unit_amount: 1,
+    name: 'Ko\'k Choy Limon va Asal bilan',
     description: '№95 oliy navli ko\'k choy sarxil limon bo\'laklari va tog\' asali bilan',
     image_url: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80',
     price: 1200000, // 12,000 so'm
-    cook_time_minutes: 5,
+    cost_price: 300000, // 3,000 so'm
+    cook_time_minutes: 0,
     ingredients: 'Ko\'k choy, limon, tabiiy asal, yalpiz',
     is_available: true,
     sort_order: 20,
@@ -447,27 +451,86 @@ export const initialMenu: Menu[] = [
     id: 'menu-21',
     organization_id: 'org-demo-001',
     category_id: 'cat-6',
-    name: 'Uy Muzdek Limonadi (1L)',
-    description: 'Yangi siqilgan limon, apelsin sharbati va yalpizli xushbo\'y limonad',
-    image_url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80',
-    price: 2800000, // 28,000 so'm
-    cook_time_minutes: 5,
-    ingredients: 'Limon, yalpiz, shakar qiyomi, gazlangan suv, muz',
+    item_type: 'product',
+    unit: 'litr',
+    unit_amount: 1.5,
+    name: 'Coca-Cola (1.5L)',
+    description: 'Klassik gazlangan salqin ichimlik, sovuq holda beriladi',
+    image_url: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80',
+    price: 1800000, // 18,000 so'm
+    cost_price: 1200000, // 12,000 so'm
+    cook_time_minutes: 0,
+    ingredients: null,
     is_available: true,
     sort_order: 21,
+  },
+  {
+    id: 'menu-21-b',
+    organization_id: 'org-demo-001',
+    category_id: 'cat-6',
+    item_type: 'product',
+    unit: 'litr',
+    unit_amount: 0.5,
+    name: 'Coca-Cola (0.5L)',
+    description: 'Klassik gazlangan ichimlik 0.5L shisha/bakalashka',
+    image_url: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600&auto=format&fit=crop&q=80',
+    price: 900000, // 9,000 so'm
+    cost_price: 550000, // 5,500 so'm
+    cook_time_minutes: 0,
+    ingredients: null,
+    is_available: true,
+    sort_order: 22,
+  },
+  {
+    id: 'menu-21-c',
+    organization_id: 'org-demo-001',
+    category_id: 'cat-6',
+    item_type: 'product',
+    unit: 'litr',
+    unit_amount: 1.5,
+    name: 'Pepsi (1.5L)',
+    description: 'Muzdek tetiklashtiruvchi Pepsi',
+    image_url: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80',
+    price: 1700000, // 17,000 so'm
+    cost_price: 1100000, // 11,000 so'm
+    cook_time_minutes: 0,
+    ingredients: null,
+    is_available: true,
+    sort_order: 23,
+  },
+  {
+    id: 'menu-21-d',
+    organization_id: 'org-demo-001',
+    category_id: 'cat-6',
+    item_type: 'product',
+    unit: 'litr',
+    unit_amount: 0.5,
+    name: 'Hydrolife Gazsiz Suv (0.5L)',
+    description: 'Toza tabiiy mineral ichimlik suvi',
+    image_url: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80',
+    price: 500000, // 5,000 so'm
+    cost_price: 250000, // 2,500 so'm
+    cook_time_minutes: 0,
+    ingredients: null,
+    is_available: true,
+    sort_order: 24,
   },
   {
     id: 'menu-22',
     organization_id: 'org-demo-001',
     category_id: 'cat-6',
-    name: 'Muzdek Ayron Ko\'katlar bilan (500ml)',
-    description: 'Qatiq va buloq suvidan tayyorlangan, shivit va bodringli tetiklashtiruvchi ayron',
-    image_url: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=600&auto=format&fit=crop&q=80',
-    price: 1000000, // 10,000 so'm
-    cook_time_minutes: 5,
-    ingredients: 'Tabiiy qatiq, shivit, tuz, muz',
+    item_type: 'product',
+    unit: 'litr',
+    unit_amount: 1,
+    name: 'Uy Muzdek Limonadi (1L)',
+    description: 'Yangi siqilgan limon, apelsin sharbati va yalpizli xushbo\'y limonad',
+    image_url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80',
+    price: 2800000, // 28,000 so'm
+    cost_price: 1000000,
+    cook_time_minutes: 0,
+    ingredients: 'Limon, yalpiz, shakar qiyomi, gazlangan suv, muz',
     is_available: true,
-    sort_order: 22,
+    sort_order: 25,
   },
 
   // Desertlar
@@ -479,10 +542,11 @@ export const initialMenu: Menu[] = [
     description: 'Asalli yumshoq qatlamlar va nozik smetana kremi bilan',
     image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80',
     price: 2400000, // 24,000 so'm
+    cost_price: 1100000,
     cook_time_minutes: 5,
     ingredients: 'Tabiiy asal, saryog\', smetana kremi, yong\'oq',
     is_available: true,
-    sort_order: 23,
+    sort_order: 26,
   },
 
   // Non
@@ -490,14 +554,35 @@ export const initialMenu: Menu[] = [
     id: 'menu-24',
     organization_id: 'org-demo-001',
     category_id: 'cat-8',
+    item_type: 'product',
+    unit: 'dona',
+    unit_amount: 1,
     name: 'Samarqand Qatlama Patiri',
     description: 'Issiq tandirda pishirilgan qat-qat saryog\'li shohona patir non',
     image_url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80',
     price: 1000000, // 10,000 so'm
-    cook_time_minutes: 5,
+    cost_price: 450000,
+    cook_time_minutes: 0,
     ingredients: 'Oliy nav un, saryog\', sedana, sut',
     is_available: true,
-    sort_order: 24,
+    sort_order: 27,
+  },
+  {
+    id: 'menu-25',
+    organization_id: 'org-demo-001',
+    category_id: 'cat-8',
+    item_type: 'product',
+    unit: 'dona',
+    unit_amount: 1,
+    name: 'Issiq Tandir Non (Obi Non)',
+    description: 'Qarsildoq yangi yopilgan issiq tandir noni',
+    image_url: 'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=600&auto=format&fit=crop&q=80',
+    price: 500000, // 5,000 so'm
+    cost_price: 250000,
+    cook_time_minutes: 0,
+    ingredients: null,
+    is_available: true,
+    sort_order: 28,
   },
 ];
 

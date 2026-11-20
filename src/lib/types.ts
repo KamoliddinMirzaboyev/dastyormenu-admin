@@ -47,10 +47,16 @@ export interface Category {
   updated_at?: string;
 }
 
+export type MenuItemType = 'dish' | 'product';
+export type ProductUnit = 'dona' | 'litr' | 'ml' | 'gram' | 'kg' | 'choynak' | 'butilka' | 'porsiya';
+
 export interface Menu {
   id: string;
   organization_id: string;
   category_id: string;
+  item_type?: MenuItemType; // 'dish' = oshxona taomi, 'product' = tayyor bar/mahsulot (cola, pepsi, suv, non, va h.k.)
+  unit?: ProductUnit | string; // 'litr', 'dona', 'gram', 'kg', 'ml', 'choynak', 'butilka'
+  unit_amount?: number | string; // masalan 0.5, 1, 1.5, 250
   name: string;
   description: string | null;
   image_url: string | null;

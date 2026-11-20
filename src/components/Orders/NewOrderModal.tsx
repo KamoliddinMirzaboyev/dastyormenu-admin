@@ -282,7 +282,14 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
                           }}
                         />
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-[#FAFAFA] truncate">{item.name}</h4>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="text-sm font-medium text-[#FAFAFA] truncate">{item.name}</h4>
+                            {item.item_type === 'product' && (
+                              <span className="text-[10px] bg-[#222222] border border-[#333333] text-[#F59E0B] px-1.5 py-0.5 rounded font-medium shrink-0">
+                                {item.unit_amount ? `${item.unit_amount} ` : ''}{item.unit || 'dona'}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-[#F59E0B] font-semibold">{formatPrice(item.price)}</p>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">

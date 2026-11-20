@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Pencil, Trash2, ImageIcon, Clock, TrendingUp } from 'lucide-react';
+import { Pencil, Trash2, ImageIcon, Clock, TrendingUp, Package } from 'lucide-react';
 import { Menu, formatPrice, getImageUrl } from '../../lib/types';
 
 interface MenuCardProps {
@@ -48,18 +48,36 @@ export const MenuCard: React.FC<MenuCardProps> = ({
 
         {/* Inactive / Stop-list Overlay */}
         {!menu.is_available && (
-          <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center animate-fade-in z-10">
             <span className="bg-[#242424] text-[#FAFAFA] text-xs font-semibold px-3 py-1 rounded-full shadow-lg border border-[#3A3A3A] tracking-wider">
               STOP-LIST
             </span>
           </div>
         )}
 
-        {/* Cook Time Badge */}
-        <div className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] text-[#FAFAFA] font-medium flex items-center gap-1 border border-white/10 shadow-sm">
-          <Clock size={11} className="text-[#A1A1AA]" />
-          <span>{menu.cook_time_minutes} min</span>
+        {/* Type Badge: Taom / Mahsulot */}
+        <div className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] text-[#A1A1AA] font-medium border border-white/10 shadow-sm flex items-center gap-1">
+          {menu.item_type === 'product' ? (
+            <>
+              <Package size={10} className="text-[#F59E0B]" />
+              <span>Mahsulot</span>
+            </>
+          ) : (
+            <span>Taom</span>
+          )}
         </div>
+
+        {/* Cook Time or Unit Badge */}
+        {menu.item_type === 'product' ? (
+          <div className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] text-[#FAFAFA] font-medium flex items-center gap-1 border border-white/10 shadow-sm">
+            <span className="text-[#F59E0B] font-semibold">{menu.unit_amount ? `${menu.unit_amount} ` : ''}{menu.unit || 'dona'}</span>
+          </div>
+        ) : (
+          <div className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] text-[#FAFAFA] font-medium flex items-center gap-1 border border-white/10 shadow-sm">
+            <Clock size={11} className="text-[#A1A1AA]" />
+            <span>{menu.cook_time_minutes} min</span>
+          </div>
+        )}
       </div>
 
       {/* Info & Financial Breakdown */}

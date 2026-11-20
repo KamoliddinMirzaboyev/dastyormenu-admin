@@ -58,6 +58,31 @@ export const menuSchema = z.object({
 
 export type MenuFormData = z.infer<typeof menuSchema>;
 
+export const productSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Mahsulot nomini kiriting')
+    .min(2, "Mahsulot nomi kamida 2 ta belgidan iborat bo'lishi kerak")
+    .max(100, "Mahsulot nomi 100 ta belgidan oshmasligi kerak"),
+  category_id: z.string().min(1, 'Kategoriyani tanlang'),
+  unit: z.string().default('dona'),
+  unit_amount: z.union([z.number(), z.string()]).optional(),
+  price_som: z
+    .number({ invalid_type_error: 'Sotilish narxini kiriting' })
+    .min(100, "Narx kamida 100 so'm bo'lishi kerak")
+    .max(10_000_000, "Narx 10,000,000 so'mdan oshmasligi kerak"),
+  cost_price_som: z
+    .number({ invalid_type_error: 'Tan narxini kiriting' })
+    .min(0, "Tan narxi manfiy bo'lishi mumkin emas")
+    .max(10_000_000, "Tan narxi 10,000,000 so'mdan oshmasligi kerak")
+    .optional(),
+  description: z.string().max(500, "Tavsif 500 ta belgidan oshmasligi kerak").optional(),
+  is_available: z.boolean().default(true),
+  sort_order: z.number().optional(),
+});
+
+export type ProductFormData = z.infer<typeof productSchema>;
+
 export const staffSchema = z.object({
   full_name: z.string().min(STAFF_LIMITS.nameMin, `Ism kamida ${STAFF_LIMITS.nameMin} ta belgidan iborat bo'lishi kerak`),
   role: z.enum(['chef', 'waiter']),
