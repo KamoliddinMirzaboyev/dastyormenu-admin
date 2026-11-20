@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { useMenu } from '../../hooks/useMenu';
 import { useToast } from '../../lib/toast';
@@ -84,25 +85,27 @@ const MenuPage: React.FC = () => {
 
       {/* Category tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <button
+        <motion.button
+          whileTap={{ scale: 0.95 }}
           onClick={() => setActiveCat('all')}
-          className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl whitespace-nowrap transition-all duration-200 ${
+          className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors duration-150 ${
             activeCat === 'all'
-              ? 'bg-[#F59E0B] text-black shadow-md shadow-[#F59E0B]/20 scale-102'
+              ? 'bg-[#F59E0B] text-black shadow-md shadow-[#F59E0B]/20'
               : 'bg-[#1A1A1A] border border-[#2A2A2A] text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[#242424]'
           }`}
         >
           Barchasi ({menus.length})
-        </button>
+        </motion.button>
         {categories.map(cat => {
           const count = menus.filter(m => m.category_id === cat.id).length;
           return (
-            <button
+            <motion.button
               key={cat.id}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setActiveCat(cat.id)}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl whitespace-nowrap transition-colors duration-150 flex items-center gap-1.5 ${
                 activeCat === cat.id
-                  ? 'bg-[#F59E0B] text-black shadow-md shadow-[#F59E0B]/20 scale-102'
+                  ? 'bg-[#F59E0B] text-black shadow-md shadow-[#F59E0B]/20'
                   : 'bg-[#1A1A1A] border border-[#2A2A2A] text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[#242424]'
               }`}
             >
@@ -111,7 +114,7 @@ const MenuPage: React.FC = () => {
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeCat === cat.id ? 'bg-black/20 text-black font-bold' : 'bg-[#252525] text-[#888]'}`}>
                 {count}
               </span>
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -131,7 +134,7 @@ const MenuPage: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-fade-in">
+        <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map(menu => (
             <MenuCard
               key={menu.id}
@@ -141,7 +144,7 @@ const MenuPage: React.FC = () => {
               onDelete={handleDelete}
             />
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* Category Modal */}

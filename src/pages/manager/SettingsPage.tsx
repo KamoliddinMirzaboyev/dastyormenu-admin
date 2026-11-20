@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { motion } from 'framer-motion';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -117,7 +118,7 @@ const SettingsPage: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-[#FAFAFA] flex items-center gap-2">
             <span>Tizim va Restoran Sozlamalari</span>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-[#242424] text-[#A1A1AA] border border-[#2E2E2E]">
               Faol
             </span>
           </h2>
@@ -130,10 +131,15 @@ const SettingsPage: React.FC = () => {
       {/* Main Full-Width Grid: Left (Profile & Info), Right (Security & System Status) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
         {/* Left Column: Restaurant Profile Settings (7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, ease: 'easeOut' }}
+          className="lg:col-span-7 space-y-6"
+        >
           <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-6 shadow-lg space-y-6">
             <div className="flex items-center gap-3 border-b border-[#262626] pb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/20 flex items-center justify-center text-[#F59E0B]">
+              <div className="w-10 h-10 rounded-xl bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA]">
                 <Building2 size={20} />
               </div>
               <div>
@@ -239,14 +245,19 @@ const SettingsPage: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </motion.div>
 
         {/* Right Column: Security, Password Change & System Status (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, delay: 0.08, ease: 'easeOut' }}
+          className="lg:col-span-5 space-y-6"
+        >
           {/* Password Change Card */}
           <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-6 shadow-lg space-y-5">
             <div className="flex items-center gap-3 border-b border-[#262626] pb-4">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <div className="w-10 h-10 rounded-xl bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA]">
                 <Lock size={20} />
               </div>
               <div>
@@ -314,39 +325,39 @@ const SettingsPage: React.FC = () => {
           </div>
 
           {/* System & Active Session Info Card */}
-          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 shadow-lg space-y-3">
-            <h4 className="text-xs font-bold text-[#FAFAFA] flex items-center gap-1.5 uppercase tracking-wider text-[#A1A1AA]">
-              <Database size={13} className="text-[#F59E0B]" />
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 shadow-sm space-y-3">
+            <h4 className="text-xs font-semibold text-[#A1A1AA] flex items-center gap-1.5 uppercase tracking-wider">
+              <Database size={13} className="text-[#A1A1AA]" />
               <span>Tizim va Holat</span>
             </h4>
 
             <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2.5 bg-[#141414] rounded-xl border border-[#262626]">
-                <span className="text-[#A1A1AA] flex items-center gap-1.5">
-                  <UserCheck size={14} className="text-emerald-400" />
+              <div className="flex items-center justify-between p-2.5 bg-[#141414] rounded-xl border border-[#242424]">
+                <span className="text-[#71717A] flex items-center gap-1.5">
+                  <UserCheck size={14} className="text-[#A1A1AA]" />
                   <span>Joriy foydalanuvchi:</span>
                 </span>
-                <span className="font-semibold text-[#FAFAFA]">{user?.full_name || 'Admin'} ({user?.username || 'admin'})</span>
+                <span className="font-medium text-[#FAFAFA]">{user?.full_name || 'Admin'} ({user?.username || 'admin'})</span>
               </div>
 
-              <div className="flex items-center justify-between p-2.5 bg-[#141414] rounded-xl border border-[#262626]">
-                <span className="text-[#A1A1AA] flex items-center gap-1.5">
-                  <ShieldCheck size={14} className="text-emerald-400" />
+              <div className="flex items-center justify-between p-2.5 bg-[#141414] rounded-xl border border-[#242424]">
+                <span className="text-[#71717A] flex items-center gap-1.5">
+                  <ShieldCheck size={14} className="text-[#A1A1AA]" />
                   <span>Xavfsizlik darajasi:</span>
                 </span>
-                <span className="font-semibold text-emerald-400">Himoyalangan</span>
+                <span className="font-medium text-[#FAFAFA]">Himoyalangan</span>
               </div>
 
-              <div className="flex items-center justify-between p-2.5 bg-[#141414] rounded-xl border border-[#262626]">
-                <span className="text-[#A1A1AA] flex items-center gap-1.5">
-                  <RefreshCw size={14} className="text-[#F59E0B]" />
+              <div className="flex items-center justify-between p-2.5 bg-[#141414] rounded-xl border border-[#242424]">
+                <span className="text-[#71717A] flex items-center gap-1.5">
+                  <RefreshCw size={14} className="text-[#A1A1AA]" />
                   <span>Baza holati:</span>
                 </span>
-                <span className="font-semibold text-[#FAFAFA]">Mahalliy (Offline Store)</span>
+                <span className="font-medium text-[#FAFAFA]">Mahalliy (Offline Store)</span>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

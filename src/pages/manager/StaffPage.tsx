@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { staffSchema, type StaffFormData } from '../../lib/validators';
@@ -264,35 +265,47 @@ const StaffPage: React.FC = () => {
 
       {/* Salary & Staff Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-4 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+        <motion.div
+          whileHover={{ y: -2 }}
+          transition={{ duration: 0.15 }}
+          className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 flex items-center gap-3.5 hover:border-[#383838] transition-colors shadow-sm"
+        >
+          <div className="w-10 h-10 rounded-xl bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#FAFAFA] shrink-0">
             <Users size={20} />
           </div>
           <div>
             <p className="text-xs text-[#A1A1AA]">Jami Xodimlar</p>
             <p className="text-xl font-bold text-[#FAFAFA]">{staff.length} <span className="text-xs font-normal text-[#A1A1AA]">nafar</span></p>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-4 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/20 flex items-center justify-center text-[#F59E0B] shrink-0">
+        <motion.div
+          whileHover={{ y: -2 }}
+          transition={{ duration: 0.15 }}
+          className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 flex items-center gap-3.5 hover:border-[#383838] transition-colors shadow-sm"
+        >
+          <div className="w-10 h-10 rounded-xl bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#F59E0B] shrink-0">
             <Wallet size={20} />
           </div>
           <div>
             <p className="text-xs text-[#A1A1AA]">Jami Oylik Maosh Fondi</p>
-            <p className="text-xl font-bold text-[#F59E0B]">{formatPrice(totalPayroll)} <span className="text-xs font-normal text-[#A1A1AA]">/ oy</span></p>
+            <p className="text-xl font-bold text-[#FAFAFA]">{formatPrice(totalPayroll)} <span className="text-xs font-normal text-[#A1A1AA]">/ oy</span></p>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-4 flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+        <motion.div
+          whileHover={{ y: -2 }}
+          transition={{ duration: 0.15 }}
+          className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 flex items-center gap-3.5 hover:border-[#383838] transition-colors shadow-sm"
+        >
+          <div className="w-10 h-10 rounded-xl bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#FAFAFA] shrink-0">
             <Wallet size={20} />
           </div>
           <div>
             <p className="text-xs text-[#A1A1AA]">O'rtacha Oylik Maosh</p>
-            <p className="text-xl font-bold text-emerald-400">{formatPrice(avgSalary)}</p>
+            <p className="text-xl font-bold text-[#FAFAFA]">{formatPrice(avgSalary)}</p>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Table */}
@@ -315,29 +328,29 @@ const StaffPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {staff.map(member => (
-                  <tr key={member.id} className="border-b border-[#2A2A2A]/50 hover:bg-[#242424]/40 transition-colors">
+                {staff.map((member, idx) => (
+                  <motion.tr
+                    key={member.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.15, delay: Math.min(idx * 0.03, 0.3) }}
+                    className="border-b border-[#2A2A2A]/50 hover:bg-[#242424]/40 transition-colors"
+                  >
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-[#F59E0B]/20 rounded-xl flex items-center justify-center shrink-0 border border-[#F59E0B]/30">
-                          <span className="text-[#F59E0B] text-xs font-bold">{(member.full_name || member.username).charAt(0)}</span>
+                        <div className="w-8 h-8 bg-[#242424] border border-[#333333] rounded-xl flex items-center justify-center shrink-0">
+                          <span className="text-[#FAFAFA] text-xs font-bold">{(member.full_name || member.username).charAt(0)}</span>
                         </div>
                         <span className="text-sm font-semibold text-[#FAFAFA]">{member.full_name || member.username}</span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                        member.role === 'chef' 
-                          ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
-                          : member.role === 'manager'
-                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                          : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                      }`}>
+                      <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-[#222222] text-[#FAFAFA] border border-[#2E2E2E]">
                         {roleLabels[member.role] ?? member.role}
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-sm font-bold text-emerald-400 font-mono">
+                      <span className="text-sm font-bold text-[#FAFAFA] font-mono">
                         {formatPrice(member.monthly_salary || 400000000)}
                       </span>
                     </td>
@@ -348,27 +361,29 @@ const StaffPage: React.FC = () => {
                     </td>
                     <td className="py-3 px-4"><PasswordCell password={member.pin_code || '1111'} /></td>
                     <td className="py-3 px-4">
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.94 }}
                         onClick={() => toggleActive(member.id, member.is_active)}
                         className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
                           member.is_active
-                            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
-                            : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 border border-gray-500/30'
+                            ? 'bg-[#222222] text-[#FAFAFA] hover:bg-[#2A2A2A] border border-[#333333]'
+                            : 'bg-[#181818] text-[#71717A] hover:bg-[#222222] border border-[#282828]'
                         }`}
                       >
                         {member.is_active ? 'Faol' : 'Nofaol'}
-                      </button>
+                      </motion.button>
                     </td>
                     <td className="py-3 px-4">
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => deleteStaff(member.id)}
                         className="text-[#A1A1AA] hover:text-rose-400 p-1.5 rounded hover:bg-rose-500/10 transition-colors"
                         title="O'chirish"
                       >
                         <Trash2 size={15} />
-                      </button>
+                      </motion.button>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>

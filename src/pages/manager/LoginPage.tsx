@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -51,10 +52,15 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="w-full max-w-sm"
+      >
         {/* Logo */}
         <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-[#F59E0B] rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#F59E0B]/20">
+          <div className="w-14 h-14 bg-[#F59E0B] rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#F59E0B]/20">
             <span className="text-black font-extrabold text-2xl">D</span>
           </div>
           <h1 className="text-2xl font-bold text-[#FAFAFA]">Dastyor Grand</h1>
@@ -62,22 +68,23 @@ const LoginPage: React.FC = () => {
         </div>
 
         {/* Demo Helper Card */}
-        <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/25 rounded-2xl p-4 mb-4 backdrop-blur-sm">
+        <div className="bg-[#1A1A1A] border border-[#2E2E2E] rounded-xl p-4 mb-4">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-[#F59E0B]">
               <KeyRound size={15} />
               <span>Demo Kirish Ma'lumotlari:</span>
             </div>
-            <button
+            <motion.button
               type="button"
+              whileTap={{ scale: 0.94 }}
               onClick={handleQuickFill}
               className="text-[11px] bg-[#F59E0B] hover:bg-[#D97706] text-black font-bold px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors"
             >
               <Sparkles size={11} />
               <span>To'ldirish</span>
-            </button>
+            </motion.button>
           </div>
-          <div className="mt-2 text-xs text-[#FAFAFA] flex items-center justify-between bg-black/30 px-3 py-1.5 rounded-lg border border-[#F59E0B]/20 font-mono">
+          <div className="mt-2 text-xs text-[#FAFAFA] flex items-center justify-between bg-black/40 px-3 py-1.5 rounded-lg border border-[#2E2E2E] font-mono">
             <span>Login: <strong className="text-[#F59E0B]">admin</strong></span>
             <span>Parol: <strong className="text-[#F59E0B]">1234</strong></span>
           </div>
@@ -92,7 +99,7 @@ const LoginPage: React.FC = () => {
         )}
 
         {/* Form */}
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6 shadow-xl">
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-6 shadow-xl">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-[#A1A1AA] mb-1.5">
@@ -144,10 +151,12 @@ const LoginPage: React.FC = () => {
               <span className="text-[#71717A]">Demo rejim</span>
             </div>
 
-            <button
+            <motion.button
               type="submit"
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
               disabled={isSubmitting}
-              className="w-full bg-[#F59E0B] hover:bg-[#D97706] text-black font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-[#F59E0B]/20 flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+              className="w-full bg-[#F59E0B] hover:bg-[#D97706] text-black font-bold py-2.5 rounded-xl transition-colors shadow-lg shadow-[#F59E0B]/20 flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
             >
               {isSubmitting ? (
                 <>
@@ -160,14 +169,14 @@ const LoginPage: React.FC = () => {
                   <span>Kirish</span>
                 </>
               )}
-            </button>
+            </motion.button>
           </form>
         </div>
 
         <p className="text-center text-[11px] text-[#71717A] mt-6">
           Dastyor Restoran Tizimi © {new Date().getFullYear()} • 100% Oflayn Demo Rejim
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 };

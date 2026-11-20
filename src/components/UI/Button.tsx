@@ -22,7 +22,7 @@ const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const base = 'inline-flex items-center justify-center font-medium rounded-btn transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed';
+  const base = 'inline-flex items-center justify-center font-medium rounded-btn transition-all duration-150 active:scale-[0.97] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variants = {
     primary:   'bg-[#F59E0B] text-black hover:bg-[#D97706]',

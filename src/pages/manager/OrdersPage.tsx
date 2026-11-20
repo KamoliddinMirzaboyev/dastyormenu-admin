@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { motion } from 'framer-motion';
 import { X, RefreshCw, Plus, CheckCircle, ChefHat, Bell, Check, Ban } from 'lucide-react';
 import { useOrders } from '../../hooks/useOrders';
 import { useRealtimeOrders } from '../../hooks/useRealtime';
@@ -112,13 +113,15 @@ const OrdersPage: React.FC = () => {
         </div>
 
         {/* Primary Action: New Order */}
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.96 }}
           onClick={() => setShowNewOrderModal(true)}
-          className="bg-[#F59E0B] hover:bg-[#D97706] text-black font-bold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-[#F59E0B]/20 flex items-center justify-center gap-2 self-start sm:self-auto"
+          className="bg-[#F59E0B] hover:bg-[#D97706] text-black font-bold px-4 py-2.5 rounded-xl transition-colors shadow-lg shadow-[#F59E0B]/20 flex items-center justify-center gap-2 self-start sm:self-auto"
         >
           <Plus size={18} />
           <span>+ Yangi Buyurtma Olish</span>
-        </button>
+        </motion.button>
       </div>
 
       {/* Filters */}
@@ -127,8 +130,9 @@ const OrdersPage: React.FC = () => {
           {/* Status tabs */}
           <div className="flex flex-wrap gap-1.5">
             {STATUS_TABS.map(tab => (
-              <button
+              <motion.button
                 key={tab.key}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setActiveStatus(tab.key)}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all ${
                   activeStatus === tab.key
@@ -137,7 +141,7 @@ const OrdersPage: React.FC = () => {
                 }`}
               >
                 {tab.label}
-              </button>
+              </motion.button>
             ))}
           </div>
 
@@ -148,13 +152,15 @@ const OrdersPage: React.FC = () => {
               onChange={e => setSelectedDate(e.target.value)}
               className="bg-[#0F0F0F] border border-[#2A2A2A] rounded-xl px-3 py-1.5 text-xs text-[#FAFAFA] focus:outline-none focus:border-[#F59E0B]"
             />
-            <button
+            <motion.button
+              whileTap={{ rotate: 180 }}
+              transition={{ duration: 0.2 }}
               onClick={refetch}
               title="Yangilash"
               className="p-2 bg-[#242424] hover:bg-[#333333] rounded-xl text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors"
             >
               <RefreshCw size={15} />
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
@@ -190,7 +196,13 @@ const OrdersPage: React.FC = () => {
                   const nextAction = STATUS_NEXT[order.status];
 
                   return (
-                    <tr key={order.id} className="border-b border-[#2A2A2A]/50 hover:bg-[#242424]/40 transition-colors">
+                    <motion.tr
+                      key={order.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.15, delay: Math.min(idx * 0.03, 0.3) }}
+                      className="border-b border-[#2A2A2A]/50 hover:bg-[#242424]/40 transition-colors"
+                    >
                       <td className="py-3 px-4 text-xs text-[#A1A1AA] font-mono">{idx + 1}</td>
                       <td className="py-3 px-4">
                         <span className="w-8 h-8 bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl inline-flex items-center justify-center text-xs font-bold text-[#F59E0B]">
@@ -204,15 +216,17 @@ const OrdersPage: React.FC = () => {
                       <td className="py-3 px-4 text-xs text-[#A1A1AA]">{formatTime(order.created_at)}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <button
+                          <motion.button
+                            whileTap={{ scale: 0.92 }}
                             onClick={() => setSelectedOrder(order)}
                             className="text-xs bg-[#2A2A2A] hover:bg-[#333333] text-[#FAFAFA] px-2.5 py-1.5 rounded-lg transition-colors"
                           >
                             Ko'rish
-                          </button>
+                          </motion.button>
                           
                           {nextAction && (
-                            <button
+                            <motion.button
+                              whileTap={{ scale: 0.92 }}
                               onClick={() => updateStatus(order.id, nextAction.next)}
                               disabled={updatingId === order.id}
                               className="text-xs bg-[#F59E0B] hover:bg-[#D97706] text-black font-semibold px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
@@ -223,21 +237,22 @@ const OrdersPage: React.FC = () => {
                                   <span>{nextAction.label.split(' ')[0]}</span>
                                 </>
                               )}
-                            </button>
+                            </motion.button>
                           )}
 
                           {order.status !== 'completed' && order.status !== 'cancelled' && (
-                            <button
+                            <motion.button
+                              whileTap={{ scale: 0.88 }}
                               onClick={() => updateStatus(order.id, 'cancelled')}
                               title="Bekor qilish"
                               className="text-xs text-rose-400 hover:text-rose-300 p-1.5 rounded hover:bg-rose-500/10 transition-colors"
                             >
                               <Ban size={14} />
-                            </button>
+                            </motion.button>
                           )}
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })}
               </tbody>

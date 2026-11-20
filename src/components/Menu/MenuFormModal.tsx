@@ -4,26 +4,11 @@ import * as Switch from '@radix-ui/react-switch';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { menuSchema, type MenuFormData } from '../../lib/validators';
-import { Upload, X, ImageIcon, Link as LinkIcon, Sparkles } from 'lucide-react';
+import { Upload, X, ImageIcon, Link as LinkIcon } from 'lucide-react';
 import { Menu, Category } from '../../lib/types';
 import Button from '../UI/Button';
 import { menuService } from '../../lib/menuService';
 import { useToast } from '../../lib/toast';
-
-const FOOD_PRESETS = [
-  { label: 'Osh (Palov)', url: 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=600&auto=format&fit=crop&q=80' },
-  { label: 'Shashlik', url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80' },
-  { label: 'Lag\'mon', url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&auto=format&fit=crop&q=80' },
-  { label: 'Qozon Kabob', url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80' },
-  { label: 'Manti', url: 'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?w=600&auto=format&fit=crop&q=80' },
-  { label: 'Sho\'rva', url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&auto=format&fit=crop&q=80' },
-  { label: 'Burger', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80' },
-  { label: 'Salat', url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80' },
-  { label: 'Choy', url: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80' },
-  { label: 'Limonad', url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80' },
-  { label: 'Tort', url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80' },
-  { label: 'Non', url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80' },
-];
 
 interface MenuFormModalProps {
   open: boolean;
@@ -124,11 +109,6 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
     } finally {
       setUploading(false);
     }
-  };
-
-  const handleApplyPreset = (url: string) => {
-    setImageUrl(url);
-    success('Rasm tanlandi');
   };
 
   const handleApplyCustomUrl = () => {
@@ -278,7 +258,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
                       <>
                         <ImageIcon size={36} className="text-[#3A3A3A] mx-auto mb-2" />
                         <p className="text-xs font-semibold text-[#FAFAFA]">Kompyuterdan rasm yuklash</p>
-                        <p className="text-[11px] text-[#71717A] mt-0.5">yoki quyidagi tayyor rasmlardan birini tanlang</p>
+                        <p className="text-[11px] text-[#71717A] mt-0.5">PNG, JPG yoki WebP formatida</p>
                       </>
                     )}
                   </div>
@@ -306,26 +286,6 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
                 className="hidden"
                 onChange={handleImageChange}
               />
-
-              {/* Fast Preset Images */}
-              <div className="mt-2.5">
-                <p className="text-[11px] text-[#71717A] mb-1.5 flex items-center gap-1 font-semibold">
-                  <Sparkles size={11} className="text-[#F59E0B]" />
-                  <span>Tezkor tayyor rasmlar:</span>
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {FOOD_PRESETS.map(p => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => handleApplyPreset(p.url)}
-                      className="text-[11px] bg-[#1E1E1E] hover:bg-[#2A2A2A] text-[#FAFAFA] border border-[#2E2E2E] px-2.5 py-1 rounded-lg transition-colors"
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* Name */}

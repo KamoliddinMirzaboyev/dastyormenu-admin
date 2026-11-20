@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -28,6 +29,26 @@ const HourlyTooltip = ({ active, payload, label }: { active?: boolean; payload?:
     );
   }
   return null;
+};
+
+// Motion animation variants
+const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+    },
+  },
+};
+
+const cardVariant: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.22, ease: 'easeOut' },
+  },
 };
 
 const DashboardPage: React.FC = () => {
@@ -128,7 +149,12 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in pb-10">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="space-y-6 pb-10"
+    >
       {/* Top Welcome & Operational Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
         <div>
@@ -144,47 +170,63 @@ const DashboardPage: React.FC = () => {
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Detailed Reports Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => navigate('/manager/reports')}
             className="bg-[#1C1C1C] hover:bg-[#252525] border border-[#2E2E2E] text-[#FAFAFA] font-medium text-xs px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
           >
             <span>To'liq Hisobotlar</span>
             <ArrowRight size={14} className="text-[#A1A1AA]" />
-          </button>
+          </motion.button>
 
           {/* New Order Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => setShowNewOrderModal(true)}
-            className="bg-[#F59E0B] hover:bg-[#D97706] text-black font-semibold text-xs px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm active:scale-95"
+            className="bg-[#F59E0B] hover:bg-[#D97706] text-black font-semibold text-xs px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
           >
             <Plus size={16} />
             <span>Buyurtma Olish</span>
-          </button>
+          </motion.button>
 
           {/* Add Expense Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => setShowAddExpense(true)}
             className="bg-[#1C1C1C] hover:bg-[#252525] border border-[#2E2E2E] text-[#FAFAFA] font-medium text-xs px-3 py-2 rounded-xl transition-colors flex items-center gap-1.5"
           >
             <Plus size={14} className="text-[#A1A1AA]" />
             <span>Xarajat</span>
-          </button>
+          </motion.button>
 
           {/* Reset Demo Button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             onClick={handleResetDemo}
             title="Demo ma'lumotlarni qayta tiklash"
             className="p-2 bg-[#1C1C1C] hover:bg-[#252525] border border-[#2E2E2E] rounded-xl text-[#71717A] hover:text-[#FAFAFA] transition-colors"
           >
             <RotateCcw size={15} />
-          </button>
+          </motion.button>
         </div>
       </div>
 
-      {/* 4 Clean Real-Time Operational Stat Cards for TODAY (Unified Professional Palette) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 4 Clean Real-Time Operational Stat Cards for TODAY */}
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
         {/* 1. Bugungi Tushum */}
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm">
+        <motion.div
+          variants={cardVariant}
+          whileHover={{ y: -2 }}
+          className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm"
+        >
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-xs font-semibold text-[#A1A1AA]">Bugungi Aylanma</span>
             <div className="w-8 h-8 rounded-lg bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA]">
@@ -203,10 +245,14 @@ const DashboardPage: React.FC = () => {
               </p>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* 2. Oshxona & Faol Buyurtmalar */}
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm">
+        <motion.div
+          variants={cardVariant}
+          whileHover={{ y: -2 }}
+          className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm"
+        >
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-xs font-semibold text-[#A1A1AA]">Oshxona & Jarayonda</span>
             <div className="w-8 h-8 rounded-lg bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA]">
@@ -225,10 +271,14 @@ const DashboardPage: React.FC = () => {
               </p>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* 3. Stollar Bandligi */}
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm">
+        <motion.div
+          variants={cardVariant}
+          whileHover={{ y: -2 }}
+          className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm"
+        >
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-xs font-semibold text-[#A1A1AA]">Zal & Stollar Bandligi</span>
             <div className="w-8 h-8 rounded-lg bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA]">
@@ -247,10 +297,14 @@ const DashboardPage: React.FC = () => {
               </p>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* 4. O'rtacha Chek */}
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm">
+        <motion.div
+          variants={cardVariant}
+          whileHover={{ y: -2 }}
+          className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-5 hover:border-[#3A3A3A] transition-all shadow-sm"
+        >
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-xs font-semibold text-[#A1A1AA]">O'rtacha Chek (Bugun)</span>
             <div className="w-8 h-8 rounded-lg bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA]">
@@ -269,8 +323,8 @@ const DashboardPage: React.FC = () => {
               </p>
             </div>
           )}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Main Operational 2-Column Split */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -331,12 +385,14 @@ const DashboardPage: React.FC = () => {
               {tables.map(table => {
                 const isOccupied = occupiedTableIds.has(table.id);
                 return (
-                  <button
+                  <motion.button
                     key={table.id}
+                    whileHover={{ scale: 1.04, y: -1 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => {
                       setSelectedTableForOrder(table.id);
                     }}
-                    className={`p-3 rounded-xl border flex flex-col items-center justify-center transition-all duration-150 active:scale-95 ${
+                    className={`p-3 rounded-xl border flex flex-col items-center justify-center transition-colors ${
                       isOccupied
                         ? 'bg-[#F59E0B]/10 border-[#F59E0B]/30 text-[#FAFAFA]'
                         : 'bg-[#141414] border-[#242424] hover:border-[#383838] text-[#A1A1AA]'
@@ -346,7 +402,7 @@ const DashboardPage: React.FC = () => {
                     <span className={`text-[10px] font-semibold mt-0.5 ${isOccupied ? 'text-[#F59E0B]' : 'text-[#71717A]'}`}>
                       {isOccupied ? 'Band' : 'Bo\'sh'}
                     </span>
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -383,70 +439,82 @@ const DashboardPage: React.FC = () => {
                 <p className="text-xs text-[#71717A] text-center py-10">Buyurtmalar mavjud emas</p>
               ) : (
                 <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                  {orders.slice(0, 6).map(order => {
-                    const mins = Math.round((Date.now() - new Date(order.created_at).getTime()) / 60000);
-                    const tableNum = (order.table as { table_number?: number } | undefined)?.table_number ?? '?';
-                    const itemsText = (order.order_items || []).map(i => `${i.menu_name} (x${i.quantity})`).join(', ');
+                  <AnimatePresence initial={false}>
+                    {orders.slice(0, 6).map(order => {
+                      const mins = Math.round((Date.now() - new Date(order.created_at).getTime()) / 60000);
+                      const tableNum = (order.table as { table_number?: number } | undefined)?.table_number ?? '?';
+                      const itemsText = (order.order_items || []).map(i => `${i.menu_name} (x${i.quantity})`).join(', ');
 
-                    return (
-                      <div
-                        key={order.id}
-                        className="p-3 bg-[#141414] rounded-xl border border-[#242424] hover:border-[#333333] transition-colors space-y-2"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-lg bg-[#222222] text-[#FAFAFA] text-xs font-bold flex items-center justify-center">
-                              {tableNum}
-                            </span>
-                            <span className="text-xs font-semibold text-[#FAFAFA]">{tableNum}-stol</span>
-                            <span className="text-[10px] text-[#71717A]">• {mins < 1 ? 'Hozirgina' : `${mins}m oldin`}</span>
+                      return (
+                        <motion.div
+                          key={order.id}
+                          layout
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="p-3 bg-[#141414] rounded-xl border border-[#242424] hover:border-[#333333] transition-colors space-y-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-lg bg-[#222222] text-[#FAFAFA] text-xs font-bold flex items-center justify-center">
+                                {tableNum}
+                              </span>
+                              <span className="text-xs font-semibold text-[#FAFAFA]">{tableNum}-stol</span>
+                              <span className="text-[10px] text-[#71717A]">• {mins < 1 ? 'Hozirgina' : `${mins}m oldin`}</span>
+                            </div>
+                            <StatusBadge status={order.status} />
                           </div>
-                          <StatusBadge status={order.status} />
-                        </div>
 
-                        <p className="text-[11px] text-[#A1A1AA] line-clamp-1 truncate" title={itemsText}>
-                          {itemsText || 'Buyurtma tarkibi'}
-                        </p>
+                          <p className="text-[11px] text-[#A1A1AA] line-clamp-1 truncate" title={itemsText}>
+                            {itemsText || 'Buyurtma tarkibi'}
+                          </p>
 
-                        <div className="flex items-center justify-between pt-1 border-t border-[#202020]">
-                          <span className="text-xs font-semibold text-[#FAFAFA]">{formatPrice(order.total_amount)}</span>
-                          
-                          {/* Clean Workflow Action button */}
-                          {order.status === 'pending' && (
-                            <button
-                              onClick={() => handleUpdateOrderStatus(order.id, 'cooking')}
-                              className="text-[10px] bg-[#222222] hover:bg-[#2A2A2A] text-[#FAFAFA] border border-[#333] px-2.5 py-1 rounded-lg font-medium transition-colors"
-                            >
-                              Oshxonaga
-                            </button>
-                          )}
-                          {order.status === 'cooking' && (
-                            <button
-                              onClick={() => handleUpdateOrderStatus(order.id, 'ready')}
-                              className="text-[10px] bg-[#F59E0B]/15 hover:bg-[#F59E0B]/25 text-[#F59E0B] border border-[#F59E0B]/30 px-2.5 py-1 rounded-lg font-medium transition-colors"
-                            >
-                              Tayyor
-                            </button>
-                          )}
-                          {order.status === 'ready' && (
-                            <button
-                              onClick={() => handleUpdateOrderStatus(order.id, 'completed')}
-                              className="text-[10px] bg-[#222222] hover:bg-[#2A2A2A] text-[#FAFAFA] border border-[#333] px-2.5 py-1 rounded-lg font-medium transition-colors"
-                            >
-                              Yopish
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                          <div className="flex items-center justify-between pt-1 border-t border-[#202020]">
+                            <span className="text-xs font-semibold text-[#FAFAFA]">{formatPrice(order.total_amount)}</span>
+                            
+                            {/* Clean Workflow Action button */}
+                            {order.status === 'pending' && (
+                              <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleUpdateOrderStatus(order.id, 'cooking')}
+                                className="text-[10px] bg-[#222222] hover:bg-[#2A2A2A] text-[#FAFAFA] border border-[#333] px-2.5 py-1 rounded-lg font-medium transition-colors"
+                              >
+                                Oshxonaga
+                              </motion.button>
+                            )}
+                            {order.status === 'cooking' && (
+                              <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleUpdateOrderStatus(order.id, 'ready')}
+                                className="text-[10px] bg-[#F59E0B]/15 hover:bg-[#F59E0B]/25 text-[#F59E0B] border border-[#F59E0B]/30 px-2.5 py-1 rounded-lg font-medium transition-colors"
+                              >
+                                Tayyor
+                              </motion.button>
+                            )}
+                            {order.status === 'ready' && (
+                              <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleUpdateOrderStatus(order.id, 'completed')}
+                                className="text-[10px] bg-[#222222] hover:bg-[#2A2A2A] text-[#FAFAFA] border border-[#333] px-2.5 py-1 rounded-lg font-medium transition-colors"
+                              >
+                                Yopish
+                              </motion.button>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
                 </div>
               )}
             </div>
           </div>
 
           {/* Banner: Jump to Detailed Reports */}
-          <div
+          <motion.div
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
             onClick={() => navigate('/manager/reports')}
             className="cursor-pointer bg-[#1A1A1A] hover:bg-[#202020] border border-[#2A2A2A] hover:border-[#383838] rounded-xl p-5 transition-all flex items-center justify-between shadow-sm group"
           >
@@ -462,7 +530,7 @@ const DashboardPage: React.FC = () => {
             <div className="w-9 h-9 rounded-lg bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA] shrink-0 ml-3">
               <TrendingUp size={16} />
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
@@ -488,7 +556,7 @@ const DashboardPage: React.FC = () => {
           onOrderCreated={loadData}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
 

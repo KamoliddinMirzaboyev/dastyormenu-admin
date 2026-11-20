@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { motion, type Variants } from 'framer-motion';
 import { Plus, Trash2, X, Utensils, CheckCircle, Clock } from 'lucide-react';
 import { Table, UserProfile, Menu, Order } from '../../lib/types';
 import { useToast } from '../../lib/toast';
@@ -9,6 +10,21 @@ import { staffService } from '../../lib/staffService';
 import { menuService } from '../../lib/menuService';
 import { orderService } from '../../lib/orderService';
 import { NewOrderModal } from '../../components/Orders/NewOrderModal';
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.04,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: 'easeOut' } },
+};
 
 const TablesPage: React.FC = () => {
   const { success, error: toastError } = useToast();
@@ -139,25 +155,25 @@ const TablesPage: React.FC = () => {
       </div>
 
       {/* Info notice: Waiter direct order & table status legend */}
-      <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs shadow-md">
+      <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-            <CheckCircle size={17} />
+          <div className="w-8 h-8 rounded-lg bg-[#222222] border border-[#2E2E2E] flex items-center justify-center text-[#A1A1AA] shrink-0">
+            <CheckCircle size={16} />
           </div>
           <div>
-            <span className="font-semibold text-[#FAFAFA]">Ofitsiant xizmati:</span>{' '}
-            <span className="text-[#A1A1AA]">
+            <span className="font-medium text-[#FAFAFA]">Ofitsiant xizmati:</span>{' '}
+            <span className="text-[#71717A]">
               Ofitsiant istalgan stoldagi mijozdan buyurtmani to'g'ridan-to'g'ri "Buyurtma Olish" tugmasi orqali qabul qiladi.
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-4 text-[#A1A1AA] shrink-0">
+        <div className="flex items-center gap-4 text-[#71717A] shrink-0 text-xs">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span className="w-2 h-2 rounded-full bg-[#555555]"></span>
             <span>Bo'sh stol</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]"></span>
+            <span className="w-2 h-2 rounded-full bg-[#F59E0B]"></span>
             <span>Band stol</span>
           </div>
         </div>
@@ -171,12 +187,17 @@ const TablesPage: React.FC = () => {
           ))}
         </div>
       ) : tables.length === 0 ? (
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-12 text-center text-[#A1A1AA]">
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-12 text-center text-[#71717A]">
           <p className="font-semibold text-[#FAFAFA] mb-1">Stollar mavjud emas</p>
           <p className="text-xs">Yangi stollar qo'shish uchun yuqoridagi tugmani bosing.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+        >
           {tables.map(table => {
             const activeOrder = activeOrders.find(o => o.table_id === table.id);
             const isOccupied = !!activeOrder;
@@ -187,25 +208,27 @@ const TablesPage: React.FC = () => {
               : 'Asosiy Zal';
 
             return (
-              <div
+              <motion.div
                 key={table.id}
-                className={`bg-[#1A1A1A] border rounded-xl p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 ${
+                variants={itemVariants}
+                whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                className={`bg-[#1A1A1A] border rounded-xl p-5 flex flex-col justify-between transition-colors duration-150 ${
                   isOccupied
-                    ? 'border-[#F59E0B]/50 shadow-md shadow-[#F59E0B]/10'
-                    : 'border-[#2A2A2A] hover:border-[#3A3A3A]'
+                    ? 'border-[#F59E0B]/40 shadow-sm'
+                    : 'border-[#262626] hover:border-[#383838]'
                 }`}
               >
                 {/* Table Header */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="w-10 h-10 rounded-xl bg-[#242424] border border-[#3A3A3A] text-[#FAFAFA] font-bold text-base flex items-center justify-center">
+                    <span className="w-9 h-9 rounded-lg bg-[#222222] border border-[#2E2E2E] text-[#FAFAFA] font-bold text-sm flex items-center justify-center">
                       {table.table_number}
                     </span>
                     <span
-                      className={`text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 ${
+                      className={`text-[11px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1 ${
                         isOccupied
-                          ? 'bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30'
-                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30'
+                          : 'bg-[#222222] text-[#A1A1AA] border border-[#2E2E2E]'
                       }`}
                     >
                       {isOccupied ? (
@@ -243,26 +266,28 @@ const TablesPage: React.FC = () => {
 
                 {/* Actions */}
                 <div className="mt-4 pt-3 border-t border-[#2A2A2A] flex items-center gap-2">
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedTableForOrder(table.id)}
-                    className="flex-1 bg-[#F59E0B] hover:bg-[#D97706] text-black font-bold text-xs py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                    className="flex-1 bg-[#F59E0B] hover:bg-[#D97706] text-black font-bold text-xs py-2 px-3 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm"
                   >
                     <Utensils size={13} />
                     <span>Buyurtma Olish</span>
-                  </button>
+                  </motion.button>
 
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
                     onClick={() => deleteTable(table.id, table.table_number)}
                     title="O'chirish"
-                    className="p-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors active:scale-95"
+                    className="p-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
                   >
                     <Trash2 size={15} />
-                  </button>
+                  </motion.button>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
 
       {/* Add Tables Modal */}

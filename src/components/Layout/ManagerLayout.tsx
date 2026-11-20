@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 
@@ -37,7 +38,17 @@ const ManagerLayout: React.FC = () => {
       <div className="lg:ml-64 flex flex-col min-h-screen">
         <TopBar title={title} onMenuToggle={() => setSidebarOpen(v => !v)} />
         <main className="flex-1 p-6">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>

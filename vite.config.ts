@@ -61,11 +61,12 @@ export default defineConfig({
             '@radix-ui/react-toast',
           ],
           'vendor-icons': ['lucide-react'],
+          'vendor-motion': ['framer-motion'],
         },
       },
     },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'recharts', 'zustand', 'lucide-react'],
+    include: ['react', 'react-dom', 'react-router-dom', 'recharts', 'zustand', 'lucide-react', 'framer-motion'],
   },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardList, UtensilsCrossed,
   Armchair, Users, BarChart3, Settings, LogOut
@@ -47,21 +48,22 @@ const Sidebar: React.FC = () => {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map(({ to, icon: Icon, label, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-btn text-sm font-medium transition-all ${
-                isActive
-                  ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/20'
-                  : 'text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[#2A2A2A]'
-              }`
-            }
-          >
-            <Icon size={18} />
-            {label}
-          </NavLink>
+          <motion.div key={to} whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.15 }}>
+            <NavLink
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-btn text-sm font-medium transition-all ${
+                  isActive
+                    ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/20'
+                    : 'text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[#2A2A2A]'
+                }`
+              }
+            >
+              <Icon size={18} />
+              {label}
+            </NavLink>
+          </motion.div>
         ))}
       </nav>
 
