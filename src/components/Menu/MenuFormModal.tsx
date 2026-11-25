@@ -4,7 +4,7 @@ import * as Switch from '@radix-ui/react-switch';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { menuSchema, type MenuFormData } from '../../lib/validators';
-import { Upload, X, ImageIcon, Link as LinkIcon } from 'lucide-react';
+import { Upload, X, ImageIcon } from 'lucide-react';
 import { Menu, Category, getImageUrl } from '../../lib/types';
 import Button from '../UI/Button';
 import { menuService } from '../../lib/menuService';
@@ -32,8 +32,6 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [imageUrl, setImageUrl] = useState<string | null>(editItem?.image_url ?? null);
-  const [customUrlInput, setCustomUrlInput] = useState('');
-  const [showUrlInput, setShowUrlInput] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const { register, handleSubmit, control, reset, watch, formState: { errors, isSubmitting } } = useForm<MenuFormData>({
@@ -111,15 +109,6 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
     }
   };
 
-  const handleApplyCustomUrl = () => {
-    if (customUrlInput.trim()) {
-      setImageUrl(customUrlInput.trim());
-      setCustomUrlInput('');
-      setShowUrlInput(false);
-      success('Rasm URL qo\'shildi');
-    }
-  };
-
   const onSubmit = async (data: MenuFormData) => {
     const costPriceTiyin = data.cost_price_som !== undefined && !isNaN(data.cost_price_som)
       ? Math.round(data.cost_price_som * 100)
@@ -186,51 +175,21 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
     <Dialog.Root open={open} onOpenChange={v => !v && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 animate-fade-in" />
-        <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-[#161616] border border-[#2A2A2A] rounded-xl p-6 z-50 max-h-[92vh] overflow-y-auto shadow-2xl">
-          <div className="flex items-center justify-between mb-5">
+        <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-[#161616] border border-[#2A2A2A] rounded-xl z-50 max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+          <div className="flex items-center justify-between px-6 pt-6 pb-3 border-b border-[#2A2A2A] shrink-0">
             <Dialog.Title className="text-base font-bold text-[#FAFAFA]">
               {editItem ? 'Taom Ma\'lumotlarini Tahrirlash' : 'Yangi Taom Qo\'shish'}
             </Dialog.Title>
             <Dialog.Close className="text-[#A1A1AA] hover:text-[#FAFAFA] p-1.5 rounded-lg hover:bg-[#2A2A2A]"><X size={18} /></Dialog.Close>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             {/* Image Preview & Selection */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-[#A1A1AA]">
-                  Taom rasmi
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowUrlInput(v => !v)}
-                    className="text-[11px] text-[#F59E0B] hover:underline flex items-center gap-1 font-semibold"
-                  >
-                    <LinkIcon size={12} />
-                    <span>URL orqali</span>
-                  </button>
-                </div>
-              </div>
-
-              {showUrlInput && (
-                <div className="flex gap-2 mb-2 p-2 bg-[#1F1F1F] rounded-xl border border-[#2E2E2E]">
-                  <input
-                    type="url"
-                    value={customUrlInput}
-                    onChange={e => setCustomUrlInput(e.target.value)}
-                    placeholder="https://example.com/taom-rasmi.jpg"
-                    className="flex-1 bg-[#121212] border border-[#2A2A2A] rounded-lg px-2.5 py-1.5 text-xs text-[#FAFAFA] focus:outline-none focus:border-[#F59E0B]"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleApplyCustomUrl}
-                    className="bg-[#F59E0B] text-black font-bold text-xs px-3 py-1.5 rounded-lg"
-                  >
-                    Qo'llash
-                  </button>
-                </div>
-              )}
+              <label className="block text-xs font-semibold text-[#A1A1AA] mb-2">
+                Taom rasmi
+              </label>
 
               <div
                 onClick={() => fileRef.current?.click()}
@@ -328,7 +287,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
                   {...register('price_som', { valueAsNumber: true })}
                   type="number"
                   min="100"
-                  step="1000"
+                  step="1"
                   placeholder="45000"
                   className="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-sm text-[#FAFAFA] font-bold focus:outline-none focus:border-[#F59E0B]"
                 />
@@ -343,7 +302,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
                   {...register('cost_price_som', { valueAsNumber: true })}
                   type="number"
                   min="0"
-                  step="1000"
+                  step="1"
                   placeholder="22000"
                   className="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-sm text-[#FAFAFA] font-bold focus:outline-none focus:border-[#F59E0B]"
                 />
@@ -421,7 +380,9 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({
               />
             </div>
 
-            <div className="pt-2 flex justify-end gap-2">
+            </div>
+
+            <div className="px-6 py-4 border-t border-[#2A2A2A] bg-[#161616] flex justify-end gap-2 shrink-0">
               <Button type="button" variant="secondary" onClick={onClose}>Bekor qilish</Button>
               <Button type="submit" variant="primary" disabled={isSubmitting}>
                 {isSubmitting ? 'Saqlanmoqda...' : 'Saqlash'}

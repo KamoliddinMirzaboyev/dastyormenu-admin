@@ -43,8 +43,13 @@ class StaffService {
   private cache: { data: UserProfile[]; timestamp: number } | null = null;
   private inFlight: Promise<ApiResponseEnvelope<UserProfile[]>> | null = null;
 
+  getCachedStaff(): UserProfile[] | null {
+    return this.cache?.data ?? null;
+  }
+
   invalidateCache() {
     this.cache = null;
+    this.inFlight = null;
   }
 
   async getStaff(force = false): Promise<ApiResponseEnvelope<UserProfile[]>> {
@@ -84,13 +89,15 @@ class StaffService {
       full_name: data.full_name.trim(),
       role: data.role,
       password: data.password,
-      pin_code: data.role === 'chef' ? (data.pin_code || data.password?.slice(0, 6)) : undefined,
+      email: data.email?.trim() || undefined,
+      pin_code: data.pin_code?.trim() || (data.role === 'chef' ? data.password?.slice(0, 6) : undefined),
       monthly_salary: data.monthly_salary || 0, // in tiyin
       is_active: data.is_active ?? true,
     };
 
     const res = await managerApi.staff.createStaff(payload);
     if (res.success && res.data) {
+      this.invalidateCache();
       return { success: true, data: mapStaff(res.data) };
     }
 
@@ -99,8 +106,19 @@ class StaffService {
 
   async updateStaff(id: string, data: UpdateStaffRequest): Promise<ApiResponseEnvelope<UserProfile>> {
     this.invalidateCache();
-    const res = await managerApi.staff.updateStaff(id, data);
+    const payload: UpdateStaffRequest = {};
+    if (data.username !== undefined) payload.username = data.username.trim();
+    if (data.full_name !== undefined) payload.full_name = data.full_name.trim();
+    if (data.role !== undefined) payload.role = data.role;
+    if (data.email !== undefined && data.email.trim() !== '') payload.email = data.email.trim();
+    if (data.password !== undefined && data.password.trim() !== '') payload.password = data.password;
+    if (data.pin_code !== undefined && data.pin_code.trim() !== '') payload.pin_code = data.pin_code.trim();
+    if (data.monthly_salary !== undefined) payload.monthly_salary = data.monthly_salary;
+    if (data.is_active !== undefined) payload.is_active = data.is_active;
+
+    const res = await managerApi.staff.updateStaff(id, payload);
     if (res.success && res.data) {
+      this.invalidateCache();
       return { success: true, data: mapStaff(res.data) };
     }
 
@@ -110,6 +128,9 @@ class StaffService {
   async deleteStaff(id: string): Promise<ApiResponseEnvelope<void>> {
     this.invalidateCache();
     const res = await managerApi.staff.deleteStaff(id);
+    if (res.success) {
+      this.invalidateCache();
+    }
     return { success: res.success, error: res.error, data: undefined };
   }
 

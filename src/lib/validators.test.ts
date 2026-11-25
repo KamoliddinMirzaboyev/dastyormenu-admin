@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { menuSchema, staffSchema, MENU_LIMITS } from './validators';
+import { menuSchema, staffSchema, staffUpdateSchema, staffPasswordSchema, MENU_LIMITS } from './validators';
 
 describe('menuSchema', () => {
   const valid = {
@@ -43,7 +43,7 @@ describe('menuSchema', () => {
 });
 
 describe('staffSchema', () => {
-  const valid = { full_name: 'Ali Valiyev', role: 'chef' as const, username: 'ali_07', password: 'secret1' };
+  const valid = { full_name: 'Ali Valiyev', role: 'chef' as const, username: 'ali_07', password: 'secret12' };
 
   it('accepts well-formed staff', () => {
     expect(staffSchema.safeParse(valid).success).toBe(true);
@@ -59,5 +59,35 @@ describe('staffSchema', () => {
 
   it('rejects a role outside the allowed set', () => {
     expect(staffSchema.safeParse({ ...valid, role: 'manager' }).success).toBe(false);
+  });
+});
+
+describe('staffUpdateSchema', () => {
+  const valid = { full_name: 'Ali Valiyev', role: 'waiter' as const, username: 'ali_07', password: '' };
+
+  it('allows omitting password when editing', () => {
+    expect(staffUpdateSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it('rejects short password if provided', () => {
+    expect(staffUpdateSchema.safeParse({ ...valid, password: '123' }).success).toBe(false);
+  });
+
+  it('rejects invalid pin_code format', () => {
+    expect(staffUpdateSchema.safeParse({ ...valid, pin_code: 'abc' }).success).toBe(false);
+  });
+});
+
+describe('staffPasswordSchema', () => {
+  it('requires at least password or pin_code', () => {
+    expect(staffPasswordSchema.safeParse({ password: '', pin_code: '' }).success).toBe(false);
+  });
+
+  it('accepts valid password alone', () => {
+    expect(staffPasswordSchema.safeParse({ password: 'newpass1', pin_code: '' }).success).toBe(true);
+  });
+
+  it('accepts valid 6-digit pin_code alone', () => {
+    expect(staffPasswordSchema.safeParse({ password: '', pin_code: '123456' }).success).toBe(true);
   });
 });

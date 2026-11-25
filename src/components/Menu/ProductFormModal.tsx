@@ -4,8 +4,8 @@ import * as Switch from '@radix-ui/react-switch';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productSchema, type ProductFormData } from '../../lib/validators';
-import { Upload, X, ImageIcon, Link as LinkIcon, Package } from 'lucide-react';
-import { Menu, Category, ProductUnit, getImageUrl } from '../../lib/types';
+import { Upload, X, ImageIcon, Package } from 'lucide-react';
+import { Menu, Category, getImageUrl } from '../../lib/types';
 import Button from '../UI/Button';
 import { menuService } from '../../lib/menuService';
 import { useToast } from '../../lib/toast';
@@ -20,27 +20,6 @@ interface ProductFormModalProps {
   uploadImage: (file: File) => Promise<string | null>;
 }
 
-const UNIT_OPTIONS: { key: ProductUnit; label: string; icon: string }[] = [
-  { key: 'dona',    label: 'Dona',     icon: '📦' },
-  { key: 'litr',    label: 'Litr (L)', icon: '🥤' },
-  { key: 'ml',      label: 'Millilitr',icon: '💧' },
-  { key: 'gram',    label: 'Gram (g)', icon: '⚖️' },
-  { key: 'kg',      label: 'Kilogram', icon: '⚖️' },
-  { key: 'choynak', label: 'Choynak',  icon: '🫖' },
-  { key: 'butilka', label: 'Butilka',  icon: '🍾' },
-  { key: 'porsiya', label: 'Porsiya',  icon: '🍽️' },
-];
-
-const QUICK_VOLUME_PRESETS = [
-  { label: '0.5 L',     amount: 0.5, unit: 'litr' as ProductUnit },
-  { label: '1 L',       amount: 1,   unit: 'litr' as ProductUnit },
-  { label: '1.5 L',     amount: 1.5, unit: 'litr' as ProductUnit },
-  { label: '1 dona',    amount: 1,   unit: 'dona' as ProductUnit },
-  { label: '1 choynak', amount: 1,   unit: 'choynak' as ProductUnit },
-  { label: '250 g',     amount: 250, unit: 'gram' as ProductUnit },
-  { label: '500 ml',    amount: 500, unit: 'ml' as ProductUnit },
-];
-
 export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   open,
   onClose,
@@ -53,8 +32,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [imageUrl, setImageUrl] = useState<string | null>(editItem?.image_url ?? null);
-  const [customUrlInput, setCustomUrlInput] = useState('');
-  const [showUrlInput, setShowUrlInput] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   // Default category helper: pick drinks or non if exists, otherwise first category
@@ -67,7 +44,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     return match?.id || categories[0]?.id || '';
   }, [categories]);
 
-  const { register, handleSubmit, control, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<ProductFormData>({
+  const { register, handleSubmit, control, reset, watch, formState: { errors, isSubmitting } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: editItem ? {
       name: editItem.name,
@@ -82,7 +59,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     } : {
       name: '',
       category_id: defaultCategoryId,
-      unit: 'litr',
+      unit: 'dona',
       unit_amount: 1,
       price_som: undefined as any,
       cost_price_som: undefined as any,
@@ -94,8 +71,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
   const watchedPrice = watch('price_som');
   const watchedCost = watch('cost_price_som');
-  const watchedUnit = watch('unit');
-  const watchedUnitAmount = watch('unit_amount');
 
   useEffect(() => {
     if (open) {
@@ -117,7 +92,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         reset({
           name: '',
           category_id: defaultCategoryId,
-          unit: 'litr',
+          unit: 'dona',
           unit_amount: 1,
           price_som: undefined as any,
           cost_price_som: undefined as any,
@@ -146,20 +121,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     } finally {
       setUploading(false);
     }
-  };
-
-  const handleApplyCustomUrl = () => {
-    if (customUrlInput.trim()) {
-      setImageUrl(customUrlInput.trim());
-      setCustomUrlInput('');
-      setShowUrlInput(false);
-      success('Rasm URL qo\'shildi');
-    }
-  };
-
-  const handleApplyPreset = (amount: number, unit: ProductUnit) => {
-    setValue('unit', unit);
-    setValue('unit_amount', amount);
   };
 
   const onSubmit = async (data: ProductFormData) => {
@@ -232,9 +193,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     <Dialog.Root open={open} onOpenChange={onClose}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 animate-fade-in" />
-        <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-6 z-50 max-h-[92vh] overflow-y-auto shadow-2xl">
+        <Dialog.Content aria-describedby={undefined} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl z-50 max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-[#262626] mb-5">
+          <div className="flex items-center justify-between px-6 pt-6 pb-3 border-b border-[#262626] shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-[#242424] border border-[#333333] flex items-center justify-center text-[#FAFAFA]">
                 <Package size={17} />
@@ -253,39 +214,11 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             </Dialog.Close>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             {/* Image Section */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-semibold text-[#A1A1AA]">Mahsulot rasmi</label>
-                <button
-                  type="button"
-                  onClick={() => setShowUrlInput(v => !v)}
-                  className="text-xs text-[#F59E0B] hover:underline flex items-center gap-1 font-semibold"
-                >
-                  <LinkIcon size={12} />
-                  <span>URL orqali</span>
-                </button>
-              </div>
-
-              {showUrlInput && (
-                <div className="flex gap-2 mb-2 p-2 bg-[#1F1F1F] rounded-xl border border-[#2E2E2E]">
-                  <input
-                    type="url"
-                    value={customUrlInput}
-                    onChange={e => setCustomUrlInput(e.target.value)}
-                    placeholder="https://example.com/mahsulot-rasmi.jpg"
-                    className="flex-1 bg-[#121212] border border-[#2A2A2A] rounded-lg px-2.5 py-1.5 text-xs text-[#FAFAFA] focus:outline-none focus:border-[#F59E0B]"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleApplyCustomUrl}
-                    className="bg-[#F59E0B] text-black font-bold text-xs px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
-                  >
-                    Qo'llash
-                  </button>
-                </div>
-              )}
+              <label className="block text-xs font-semibold text-[#A1A1AA] mb-1.5">Mahsulot rasmi</label>
 
               <div
                 onClick={() => fileRef.current?.click()}
@@ -371,68 +304,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 ))}
               </select>
               {errors.category_id && <p className="text-rose-400 text-xs mt-1">{errors.category_id.message}</p>}
-            </div>
-
-            {/* Unit and Amount / Volume Section */}
-            <div className="bg-[#141414] border border-[#262626] rounded-xl p-3.5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#FAFAFA] flex items-center gap-1.5">
-                  <Package size={14} className="text-[#F59E0B]" />
-                  <span>Miqdori va O'lchov Birligi</span>
-                </span>
-                <span className="text-[11px] text-[#71717A]">
-                  Tanlangan: <strong className="text-[#FAFAFA]">{watchedUnitAmount || '1'} {watchedUnit || 'dona'}</strong>
-                </span>
-              </div>
-
-              {/* Quick Volume / Quantity Presets */}
-              <div>
-                <p className="text-[10px] text-[#71717A] mb-1.5 font-semibold uppercase tracking-wider">
-                  Tezkor parametrlar:
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {QUICK_VOLUME_PRESETS.map(p => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => handleApplyPreset(p.amount, p.unit)}
-                      className="text-xs bg-[#1E1E1E] hover:bg-[#2A2A2A] hover:border-[#F59E0B]/50 text-[#FAFAFA] border border-[#2E2E2E] px-2.5 py-1 rounded-lg transition-all active:scale-95"
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Precise input: Amount + Unit */}
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-[11px] text-[#A1A1AA] mb-1 font-medium">
-                    Miqdori (Hajmi / Soni)
-                  </label>
-                  <input
-                    {...register('unit_amount')}
-                    placeholder="Masalan: 0.5, 1, 1.5, 250"
-                    className="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-1.5 text-xs text-[#FAFAFA] focus:outline-none focus:border-[#F59E0B]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] text-[#A1A1AA] mb-1 font-medium">
-                    O'lchov birligi
-                  </label>
-                  <select
-                    {...register('unit')}
-                    className="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-1.5 text-xs text-[#FAFAFA] focus:outline-none focus:border-[#F59E0B]"
-                  >
-                    {UNIT_OPTIONS.map(u => (
-                      <option key={u.key} value={u.key}>
-                        {u.icon} {u.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
             </div>
 
             {/* Financials: Selling Price & Cost Price */}
@@ -523,8 +394,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               />
             </div>
 
+            </div>
+
             {/* Actions */}
-            <div className="pt-3 border-t border-[#262626] flex items-center justify-end gap-3">
+            <div className="px-6 py-4 border-t border-[#262626] bg-[#1A1A1A] flex items-center justify-end gap-3 shrink-0">
               <Button type="button" variant="secondary" onClick={onClose}>
                 Bekor qilish
               </Button>

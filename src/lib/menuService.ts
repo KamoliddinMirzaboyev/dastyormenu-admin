@@ -2,6 +2,7 @@
 
 import { managerApi, ApiResponseEnvelope } from './managerClient';
 import { Menu, MenuItemType, PreparationArea } from './types';
+import { queryClient } from './queryClient';
 
 export interface CreateMenuRequest {
   organization?: string;
@@ -152,7 +153,12 @@ class MenuService {
 
     const res = await managerApi.menu.createMenu(payload);
     if (res.success && res.data) {
-      return { success: true, data: mapMenu(res.data) };
+      this.invalidateCache();
+      const created = mapMenu(res.data);
+      queryClient.setQueryData<Menu[]>('menu', (prev) =>
+        prev ? [...prev, created] : [created]
+      );
+      return { success: true, data: created };
     }
 
     return { success: false, error: res.error };
@@ -179,25 +185,40 @@ class MenuService {
     }
 
     const res = await managerApi.menu.updateMenu(id, payload);
-    if (res.success && res.data) {
+    if (res.success) {
       this.invalidateCache();
-      return { success: true, data: mapMenu(res.data) };
+      const updated = res.data ? mapMenu(res.data) : undefined;
+      if (updated) {
+        queryClient.setQueryData<Menu[]>('menu', (prev) =>
+          (prev ?? []).map((m) => (m.id === id ? updated : m))
+        );
+      }
+      return { success: true, data: updated };
     }
 
     return { success: false, error: res.error };
   }
 
   async deleteMenu(id: string): Promise<ApiResponseEnvelope<void>> {
-    this.invalidateCache();
     const res = await managerApi.menu.deleteMenu(id);
+    if (res.success) {
+      this.invalidateCache();
+      queryClient.setQueryData<Menu[]>('menu', (prev) =>
+        (prev ?? []).filter((m) => m.id !== id)
+      );
+    }
     return { success: res.success, error: res.error, data: undefined };
   }
 
   async toggleAvailable(id: string, isAvailable: boolean): Promise<ApiResponseEnvelope<Menu>> {
-    this.invalidateCache();
     const res = await managerApi.menu.toggleAvailability(id, !isAvailable);
     if (res.success && res.data) {
-      return { success: true, data: mapMenu(res.data) };
+      this.invalidateCache();
+      const updated = mapMenu(res.data);
+      queryClient.setQueryData<Menu[]>('menu', (prev) =>
+        (prev ?? []).map((m) => (m.id === id ? updated : m))
+      );
+      return { success: true, data: updated };
     }
 
     return { success: false, error: res.error };

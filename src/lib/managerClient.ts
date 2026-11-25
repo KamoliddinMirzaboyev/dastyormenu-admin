@@ -72,6 +72,40 @@ export class ManagerClient {
     }
   }
 
+  private extractErrorMessage(resJson: any): string {
+    if (!resJson || typeof resJson !== 'object') {
+      return 'Serverda xatolik yuz berdi.';
+    }
+    if (typeof resJson.detail === 'string') return resJson.detail;
+    if (typeof resJson.message === 'string') return resJson.message;
+    if (resJson.error) {
+      if (typeof resJson.error === 'string') return resJson.error;
+      if (resJson.error.details && typeof resJson.error.details === 'object') {
+        const nested = this.extractErrorMessage(resJson.error.details);
+        if (nested !== 'Serverda xatolik yuz berdi.') return nested;
+      }
+      if (resJson.error.message) return String(resJson.error.message);
+    }
+    if (Array.isArray(resJson.non_field_errors) && resJson.non_field_errors.length > 0) {
+      return String(resJson.non_field_errors[0]);
+    }
+    const fieldErrors: string[] = [];
+    for (const [key, val] of Object.entries(resJson)) {
+      if (key === 'success' || key === 'status' || key === 'code') continue;
+      if (Array.isArray(val) && val.length > 0) {
+        fieldErrors.push(`${key}: ${val[0]}`);
+      } else if (typeof val === 'string') {
+        fieldErrors.push(`${key}: ${val}`);
+      } else if (val && typeof val === 'object') {
+        const sub = this.extractErrorMessage(val);
+        if (sub !== 'Serverda xatolik yuz berdi.') {
+          fieldErrors.push(`${key}: ${sub}`);
+        }
+      }
+    }
+    return fieldErrors.length > 0 ? fieldErrors.join('; ') : 'Serverda xatolik yuz berdi.';
+  }
+
   private onTokenRefreshed(newToken: string) {
     this.refreshSubscribers.forEach((cb) => cb(newToken));
     this.refreshSubscribers = [];
@@ -171,6 +205,7 @@ export class ManagerClient {
     try {
       let response = await fetch(url, {
         ...options,
+        cache: options.cache ?? 'no-store',
         headers,
         signal: controller.signal,
       });
@@ -189,7 +224,7 @@ export class ManagerClient {
             if (newToken) {
               this.onTokenRefreshed(newToken);
               headers.set('Authorization', `Bearer ${newToken}`);
-              response = await fetch(url, { ...options, headers });
+              response = await fetch(url, { ...options, cache: options.cache ?? 'no-store', headers });
             } else {
               this.handleUnauthorized();
               return {
@@ -205,7 +240,7 @@ export class ManagerClient {
               this.addRefreshSubscriber(async (newToken) => {
                 headers.set('Authorization', `Bearer ${newToken}`);
                 try {
-                  const res = await fetch(url, { ...options, headers });
+                  const res = await fetch(url, { ...options, cache: options.cache ?? 'no-store', headers });
                   const json = await res.json().catch(() => null);
                   resolve(json || { success: res.ok, data: json });
                 } catch (err) {
@@ -236,6 +271,19 @@ export class ManagerClient {
       const resJson = await response.json().catch(() => null);
 
       if (resJson && typeof resJson.success === 'boolean') {
+        if (!resJson.success) {
+          const detailed = this.extractErrorMessage(resJson);
+          return {
+            ...resJson,
+            error: {
+              ...(resJson.error || {}),
+              message:
+                detailed !== 'Serverda xatolik yuz berdi.'
+                  ? detailed
+                  : resJson.error?.message || "So'rovni tekshiring.",
+            },
+          } as ApiResponseEnvelope<T>;
+        }
         return resJson as ApiResponseEnvelope<T>;
       }
 
@@ -246,7 +294,7 @@ export class ManagerClient {
       return {
         success: false,
         error: {
-          message: resJson?.detail || resJson?.message || 'Serverda xatolik yuz berdi.',
+          message: this.extractErrorMessage(resJson),
           code: String(response.status),
           details: resJson,
         },
@@ -434,6 +482,7 @@ export class ManagerClient {
       full_name: string;
       role: 'chef' | 'waiter';
       password: string;
+      email?: string;
       pin_code?: string;
       monthly_salary?: number;
       is_active?: boolean;

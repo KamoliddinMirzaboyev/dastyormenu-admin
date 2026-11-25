@@ -3,6 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Trash2, X } from 'lucide-react';
 import { Category } from '../../lib/types';
 import Button from '../UI/Button';
+import ConfirmModal from '../UI/ConfirmModal';
 import { categoryService } from '../../lib/categoryService';
 import { useToast } from '../../lib/toast';
 
@@ -24,6 +25,8 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('🍽️');
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const addCategory = async () => {
     const trimmedName = name.trim();
@@ -55,16 +58,20 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
     }
   };
 
-  const deleteCategory = async (id: string, catName: string) => {
-    if (!confirm(`"${catName}" kategoriyasini o'chirishni xohlaysizmi?`)) return;
+  const confirmDeleteCategory = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await categoryService.deleteCategory(id);
+      const res = await categoryService.deleteCategory(deleteTarget.id);
       if (res.success) {
         success('Kategoriya o\'chirildi');
+        setDeleteTarget(null);
         onRefetch();
       }
     } catch {
       toastError('Kategoriyani o\'chirib bo\'lmadi');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -107,7 +114,7 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
                   <span>{cat.name}</span>
                 </span>
                 <button
-                  onClick={() => deleteCategory(cat.id, cat.name)}
+                  onClick={() => setDeleteTarget({ id: cat.id, name: cat.name })}
                   className="text-[#71717A] hover:text-rose-400 p-1 transition-colors"
                 >
                   <Trash2 size={14} />
@@ -117,6 +124,20 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
           </div>
         </Dialog.Content>
       </Dialog.Portal>
+
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDeleteCategory}
+        loading={deleting}
+        description={
+          deleteTarget && (
+            <>
+              <span className="text-[#FAFAFA] font-semibold">"{deleteTarget.name}"</span> kategoriyasi o'chiriladi.
+            </>
+          )
+        }
+      />
     </Dialog.Root>
   );
 };

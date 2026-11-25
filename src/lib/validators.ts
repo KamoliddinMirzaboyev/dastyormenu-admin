@@ -26,7 +26,7 @@ export const MENU_LIMITS = {
 export const STAFF_LIMITS = {
   nameMin: 2,
   usernameMin: 3,
-  passwordMin: 6,
+  passwordMin: 8,
 } as const;
 
 export const menuSchema = z.object({
@@ -90,7 +90,13 @@ export const staffSchema = z.object({
     .string()
     .min(STAFF_LIMITS.usernameMin, `Login kamida ${STAFF_LIMITS.usernameMin} ta belgidan iborat bo'lishi kerak`)
     .regex(/^[a-z0-9_]+$/, 'Faqat kichik harflar, raqamlar va _ belgisidan foydalaning'),
+  email: z.string().email("Email formati noto'g'ri").optional().or(z.literal('')),
   password: z.string().min(STAFF_LIMITS.passwordMin, `Parol kamida ${STAFF_LIMITS.passwordMin} ta belgidan iborat bo'lishi kerak`),
+  pin_code: z
+    .string()
+    .regex(/^\d{6}$/, 'PIN kod 6 ta raqamdan iborat bo\'lishi kerak')
+    .optional()
+    .or(z.literal('')),
   monthly_salary_som: z
     .number({ invalid_type_error: 'Oylik maoshni kiriting' })
     .min(0, "Maosh manfiy bo'lishi mumkin emas")
@@ -98,3 +104,32 @@ export const staffSchema = z.object({
 });
 
 export type StaffFormData = z.infer<typeof staffSchema>;
+
+export const staffUpdateSchema = staffSchema.extend({
+  password: z
+    .string()
+    .min(STAFF_LIMITS.passwordMin, `Parol kamida ${STAFF_LIMITS.passwordMin} ta belgidan iborat bo'lishi kerak`)
+    .optional()
+    .or(z.literal('')),
+  is_active: z.boolean().optional(),
+});
+
+export type StaffUpdateFormData = z.infer<typeof staffUpdateSchema>;
+
+export const staffPasswordSchema = z.object({
+  password: z
+    .string()
+    .min(STAFF_LIMITS.passwordMin, `Parol kamida ${STAFF_LIMITS.passwordMin} ta belgidan iborat bo'lishi kerak`)
+    .optional()
+    .or(z.literal('')),
+  pin_code: z
+    .string()
+    .regex(/^\d{6}$/, 'PIN kod 6 ta raqamdan iborat bo\'lishi kerak')
+    .optional()
+    .or(z.literal('')),
+}).refine(data => Boolean(data.password?.trim() || data.pin_code?.trim()), {
+  message: 'Kamida parol yoki PIN kodni kiriting',
+  path: ['password'],
+});
+
+export type StaffPasswordFormData = z.infer<typeof staffPasswordSchema>;

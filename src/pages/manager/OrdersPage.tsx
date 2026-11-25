@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { motion } from 'framer-motion';
-import { X, RefreshCw, Plus, CheckCircle, ChefHat, Bell, Check, Ban } from 'lucide-react';
+import { X, RefreshCw, Plus, CheckCircle, ChefHat, Bell, Check, Ban, Clock, User, UtensilsCrossed, MessageSquare, Eye, Receipt } from 'lucide-react';
 import { useOrders } from '../../hooks/useOrders';
 import { useRealtimeOrders } from '../../hooks/useRealtime';
 import { orderService } from '../../lib/orderService';
@@ -11,7 +11,8 @@ import { menuService } from '../../lib/menuService';
 import { useToast } from '../../lib/toast';
 import { Order, OrderStatus, Table, UserProfile, Menu, formatPrice } from '../../lib/types';
 import StatusBadge from '../../components/UI/StatusBadge';
-import { TableSkeleton } from '../../components/UI/LoadingSkeleton';
+import { GridSkeleton } from '../../components/UI/LoadingSkeleton';
+import ConfirmModal from '../../components/UI/ConfirmModal';
 import { NewOrderModal } from '../../components/Orders/NewOrderModal';
 
 const STATUS_TABS: { key: OrderStatus | 'all'; label: string }[] = [
@@ -36,6 +37,7 @@ const OrdersPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
 
   // Aux state for NewOrderModal
@@ -120,7 +122,7 @@ const OrdersPage: React.FC = () => {
           className="bg-[#F59E0B] hover:bg-[#D97706] text-black font-bold px-4 py-2.5 rounded-xl transition-colors shadow-lg shadow-[#F59E0B]/20 flex items-center justify-center gap-2 self-start sm:self-auto"
         >
           <Plus size={18} />
-          <span>+ Yangi Buyurtma Olish</span>
+          <span>Yangi Buyurtma Olish</span>
         </motion.button>
       </div>
 
@@ -165,105 +167,227 @@ const OrdersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl overflow-hidden shadow-lg">
-        {loading ? (
-          <div className="p-6"><TableSkeleton rows={6} cols={7} /></div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#2A2A2A] bg-[#141414]/50">
-                  {['№', 'Stol', 'Ofitsiant', 'Taomlar', 'Summa', 'Holat', 'Vaqt', 'Harakatlar'].map(h => (
-                    <th key={h} className="text-left py-3.5 px-4 text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {orders.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-16 text-center text-[#A1A1AA] text-sm">
-                      <p className="font-semibold text-[#FAFAFA] mb-1">Buyurtmalar topilmadi</p>
-                      <p className="text-xs text-[#71717A]">
-                        Ushbu sana yoki holat bo'yicha buyurtma mavjud emas. Yuqoridagi "+ Yangi Buyurtma Olish" tugmasi orqali yangi buyurtma qo'shing.
-                      </p>
-                    </td>
-                  </tr>
-                ) : orders.map((order, idx) => {
-                  const tableNum = (order.table as { table_number?: number } | undefined)?.table_number ?? '?';
-                  const waiterName = (order.waiter as { full_name?: string } | undefined)?.full_name ?? '—';
-                  const itemCount = order.order_items?.length ?? 0;
-                  const nextAction = STATUS_NEXT[order.status];
-
-                  return (
-                    <motion.tr
-                      key={order.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.15, delay: Math.min(idx * 0.03, 0.3) }}
-                      className="border-b border-[#2A2A2A]/50 hover:bg-[#242424]/40 transition-colors"
-                    >
-                      <td className="py-3 px-4 text-xs text-[#A1A1AA] font-mono">{idx + 1}</td>
-                      <td className="py-3 px-4">
-                        <span className="w-8 h-8 bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl inline-flex items-center justify-center text-xs font-bold text-[#F59E0B]">
-                          {tableNum}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-sm font-medium text-[#FAFAFA]">{waiterName}</td>
-                      <td className="py-3 px-4 text-sm text-[#A1A1AA]">{itemCount} ta taom</td>
-                      <td className="py-3 px-4 text-sm font-bold text-[#FAFAFA]">{formatPrice(order.total_amount)}</td>
-                      <td className="py-3 px-4"><StatusBadge status={order.status} /></td>
-                      <td className="py-3 px-4 text-xs text-[#A1A1AA]">{formatTime(order.created_at)}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <motion.button
-                            whileTap={{ scale: 0.92 }}
-                            onClick={() => setSelectedOrder(order)}
-                            className="text-xs bg-[#2A2A2A] hover:bg-[#333333] text-[#FAFAFA] px-2.5 py-1.5 rounded-lg transition-colors"
-                          >
-                            Ko'rish
-                          </motion.button>
-                          
-                          {nextAction && (
-                            <motion.button
-                              whileTap={{ scale: 0.92 }}
-                              onClick={() => updateStatus(order.id, nextAction.next)}
-                              disabled={updatingId === order.id}
-                              className="text-xs bg-[#F59E0B] hover:bg-[#D97706] text-black font-semibold px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
-                            >
-                              {updatingId === order.id ? '...' : (
-                                <>
-                                  <nextAction.icon size={13} />
-                                  <span>{nextAction.label.split(' ')[0]}</span>
-                                </>
-                              )}
-                            </motion.button>
-                          )}
-
-                          {(order.status === 'pending' || order.status === 'cooking') && (
-                            <motion.button
-                              whileTap={{ scale: 0.88 }}
-                              onClick={() => {
-                                if (confirm(`Buyurtmani bekor qilishni tasdiqlaysizmi?`)) {
-                                  updateStatus(order.id, 'cancelled');
-                                }
-                              }}
-                              title="Bekor qilish"
-                              className="text-xs text-rose-400 hover:text-rose-300 p-1.5 rounded hover:bg-rose-500/10 transition-colors"
-                            >
-                              <Ban size={14} />
-                            </motion.button>
-                          )}
-                        </div>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      {/* Summary Strip */}
+      {!loading && orders.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3">
+            <p className="text-[11px] text-[#71717A] font-medium">Jami buyurtmalar</p>
+            <p className="text-lg font-bold text-[#FAFAFA] mt-0.5">{orders.length} ta</p>
           </div>
-        )}
-      </div>
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3">
+            <p className="text-[11px] text-[#71717A] font-medium">Faol (jarayonda)</p>
+            <p className="text-lg font-bold text-[#F59E0B] mt-0.5">
+              {orders.filter(o => o.status === 'pending' || o.status === 'cooking' || o.status === 'ready').length} ta
+            </p>
+          </div>
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3">
+            <p className="text-[11px] text-[#71717A] font-medium">Tugallangan</p>
+            <p className="text-lg font-bold text-emerald-400 mt-0.5">
+              {orders.filter(o => o.status === 'completed').length} ta
+            </p>
+          </div>
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-4 py-3">
+            <p className="text-[11px] text-[#71717A] font-medium">Umumiy summa</p>
+            <p className="text-lg font-bold text-[#FAFAFA] mt-0.5">
+              {formatPrice(orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.grand_total || o.total_amount || 0), 0))}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Orders Card Grid */}
+      {loading ? (
+        <GridSkeleton count={6} />
+      ) : orders.length === 0 ? (
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl py-16 px-6 text-center shadow-lg">
+          <Receipt size={36} className="text-[#3A3A3A] mx-auto mb-3" />
+          <p className="font-semibold text-[#FAFAFA] text-sm mb-1">Buyurtmalar topilmadi</p>
+          <p className="text-xs text-[#71717A]">
+            Ushbu sana yoki holat bo'yicha buyurtma mavjud emas. Yuqoridagi "Yangi Buyurtma Olish" tugmasi orqali yangi buyurtma qo'shing.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {orders.map((order, idx) => {
+            const tableNum = order.table_number ?? (order.table as { table_number?: number } | undefined)?.table_number ?? '?';
+            const waiterName = order.waiter_name || (order.waiter as { full_name?: string } | undefined)?.full_name || 'Belgilanmagan';
+            const rawItems = order.order_items && order.order_items.length > 0
+              ? order.order_items.map(i => ({
+                  id: i.id,
+                  name: i.menu_name,
+                  qty: i.quantity,
+                  price: i.menu_price * i.quantity,
+                  mod: i.modifications,
+                }))
+              : (order.items ?? []).map((i, k) => ({
+                  id: i.id || String(k),
+                  name: i.name || 'Taom',
+                  qty: i.quantity || 1,
+                  price: i.line_total ?? ((i.unit_price || 0) * (i.quantity || 1)),
+                  mod: i.modifications,
+                }));
+            const totalQty = rawItems.reduce((s, i) => s + i.qty, 0);
+            const nextAction = STATUS_NEXT[order.status];
+            const exactTime = new Date(order.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+            const isPaid = order.payment_status === 'paid';
+            const totalSum = order.grand_total || order.total_amount;
+
+            const accentBorder =
+              order.status === 'pending' ? 'border-t-2 border-t-[#F59E0B]' :
+              order.status === 'cooking' ? 'border-t-2 border-t-sky-500' :
+              order.status === 'ready' ? 'border-t-2 border-t-emerald-500' :
+              order.status === 'cancelled' ? 'border-t-2 border-t-rose-500/70 opacity-80' :
+              'border-t-2 border-t-[#3A3A3A]';
+
+            return (
+              <motion.div
+                key={order.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.15, delay: Math.min(idx * 0.03, 0.25) }}
+                className={`bg-[#1A1A1A] border border-[#2A2A2A] ${accentBorder} rounded-xl p-4 flex flex-col justify-between gap-3.5 hover:border-[#3A3A3A] transition-colors shadow-md`}
+              >
+                {/* Top: Table + Order # + Status */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-[#242424] border border-[#333333] flex flex-col items-center justify-center shrink-0">
+                      <span className="text-[9px] uppercase text-[#71717A] font-semibold leading-none">Stol</span>
+                      <span className="text-base font-bold text-[#F59E0B] leading-tight">{tableNum}</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-[#FAFAFA]">Buyurtma #{idx + 1}</span>
+                        {order.source && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#242424] text-[#A1A1AA] border border-[#2E2E2E]">
+                            {order.source === 'customer' ? 'QR Menyu' : 'Ofitsiant'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] text-[#A1A1AA] mt-1">
+                        <span className="flex items-center gap-1">
+                          <User size={11} className="text-[#71717A]" />
+                          <span>{waiterName}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={11} className="text-[#71717A]" />
+                          <span>{exactTime} ({formatTime(order.created_at)})</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <StatusBadge status={order.status} />
+                </div>
+
+                {/* Middle: Items List */}
+                <div className="bg-[#141414] border border-[#242424] rounded-xl p-3 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] text-[#71717A] pb-1 border-b border-[#222222]">
+                    <span className="flex items-center gap-1 font-semibold">
+                      <UtensilsCrossed size={11} />
+                      <span>Buyurtma tarkibi</span>
+                    </span>
+                    <span>{totalQty} ta pozitsiya</span>
+                  </div>
+
+                  {rawItems.length === 0 ? (
+                    <p className="text-xs text-[#71717A] py-1">Taomlar ro'yxati mavjud emas</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {rawItems.slice(0, 4).map((item) => (
+                        <div key={item.id} className="flex items-center justify-between text-xs gap-2">
+                          <div className="truncate text-[#E4E4E7]">
+                            <span className="font-bold text-[#F59E0B] mr-1.5">{item.qty}x</span>
+                            <span>{item.name}</span>
+                            {item.mod && <span className="text-[10px] text-[#71717A] ml-1">({item.mod})</span>}
+                          </div>
+                          <span className="text-[#A1A1AA] font-mono shrink-0">{formatPrice(item.price)}</span>
+                        </div>
+                      ))}
+                      {rawItems.length > 4 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOrder(order)}
+                          className="text-[11px] text-[#F59E0B] hover:underline font-medium pt-0.5"
+                        >
+                          + yana {rawItems.length - 4} ta taom ko'rish
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Optional Customer Note */}
+                {order.customer_note && (
+                  <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 text-xs text-amber-200">
+                    <MessageSquare size={13} className="text-[#F59E0B] shrink-0 mt-0.5" />
+                    <span className="line-clamp-2">{order.customer_note}</span>
+                  </div>
+                )}
+
+                {/* Bottom: Total + Payment + Actions */}
+                <div className="pt-2 border-t border-[#262626] flex items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-bold text-[#FAFAFA]">{formatPrice(totalSum)}</span>
+                      {order.payment_status && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${
+                          isPaid
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                            : 'bg-[#242424] text-[#A1A1AA] border border-[#2E2E2E]'
+                        }`}>
+                          {isPaid ? "To'langan" : "To'lanmagan"}
+                        </span>
+                      )}
+                    </div>
+                    {order.tip_amount > 0 && (
+                      <p className="text-[10px] text-[#71717A]">
+                        Xizmat haqi: +{formatPrice(order.tip_amount)} ({order.tip_percentage}%)
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
+                      onClick={() => setSelectedOrder(order)}
+                      className="text-xs bg-[#242424] hover:bg-[#303030] text-[#FAFAFA] px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                    >
+                      <Eye size={13} />
+                      <span>Batafsil</span>
+                    </motion.button>
+
+                    {nextAction && (
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => updateStatus(order.id, nextAction.next)}
+                        disabled={updatingId === order.id}
+                        className="text-xs bg-[#F59E0B] hover:bg-[#D97706] text-black font-semibold px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                      >
+                        {updatingId === order.id ? '...' : (
+                          <>
+                            <nextAction.icon size={13} />
+                            <span>{nextAction.label.split(' ')[0]}</span>
+                          </>
+                        )}
+                      </motion.button>
+                    )}
+
+                    {(order.status === 'pending' || order.status === 'cooking') && (
+                      <motion.button
+                        whileTap={{ scale: 0.88 }}
+                        onClick={() => setCancelOrderId(order.id)}
+                        title="Bekor qilish"
+                        className="text-xs text-rose-400 hover:text-rose-300 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors"
+                      >
+                        <Ban size={14} />
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Order Detail Modal */}
       <Dialog.Root open={!!selectedOrder} onOpenChange={open => !open && setSelectedOrder(null)}>
@@ -301,7 +425,7 @@ const OrdersPage: React.FC = () => {
                   <div className="bg-[#121212] rounded-xl p-3 border border-[#2A2A2A]">
                     <p className="text-[#A1A1AA] text-xs mb-1">Jami to'lov</p>
                     <p className="text-[#F59E0B] font-extrabold text-base">{formatPrice(selectedOrder.total_amount)}</p>
-                    <p className="text-[10px] text-[#A1A1AA]">+10% xizmat haqi: {formatPrice(selectedOrder.tip_amount || 0)}</p>
+                    <p className="text-[10px] text-[#A1A1AA]">+{selectedOrder.tip_percentage ?? 0}% xizmat haqi: {formatPrice(selectedOrder.tip_amount || 0)}</p>
                   </div>
                   <div className="bg-[#121212] rounded-xl p-3 border border-[#2A2A2A]">
                     <p className="text-[#A1A1AA] text-xs mb-1">Buyurtma vaqti</p>
@@ -372,6 +496,21 @@ const OrdersPage: React.FC = () => {
         staff={staff}
         menu={menu}
         onOrderCreated={refetch}
+      />
+
+      <ConfirmModal
+        open={Boolean(cancelOrderId)}
+        onClose={() => setCancelOrderId(null)}
+        onConfirm={async () => {
+          if (!cancelOrderId) return;
+          await updateStatus(cancelOrderId, 'cancelled');
+          setCancelOrderId(null);
+        }}
+        loading={Boolean(cancelOrderId && updatingId === cancelOrderId)}
+        title="Buyurtmani bekor qilasizmi?"
+        description="Ushbu buyurtma bekor qilingan holatga o'tkaziladi."
+        confirmText="Ha, bekor qilish"
+        loadingText="Bekor qilinmoqda..."
       />
     </div>
   );

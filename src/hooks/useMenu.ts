@@ -17,7 +17,7 @@ export function useMenu() {
   // StaleTime: 2 minutes for menus, 5 minutes for categories
   const menusQuery = useQuery<Menu[]>({
     key: 'menu',
-    fetcher: () => menuService.getMenus(),
+    fetcher: () => menuService.getMenus(undefined, true),
     enabled,
     staleTime: 2 * 60 * 1000,
   });

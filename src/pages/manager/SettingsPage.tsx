@@ -5,13 +5,14 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Building2, Lock, Upload, ShieldCheck,
-  Phone, MapPin, Store, UserCheck, KeyRound, Database, RefreshCw
+  Phone, MapPin, Store, UserCheck, KeyRound, Database, RefreshCw, Percent
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../lib/toast';
 import Button from '../../components/UI/Button';
 import { managerApi } from '../../lib/managerClient';
 import { authService } from '../../lib/authService';
+import { getDefaultServiceFeePercentage, setDefaultServiceFeePercentage } from '../../lib/orderService';
 import { getImageUrl } from '../../lib/types';
 import { resizeImage, fileToBase64 } from '../../lib/imageUploadService';
 
@@ -37,6 +38,7 @@ const SettingsPage: React.FC = () => {
   const { user, organization, loadProfile } = useAuthStore();
   const { success, error: toastError } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [serviceFeePct, setServiceFeePct] = useState<number>(() => getDefaultServiceFeePercentage());
 
   // Restaurant details form
   const {
@@ -63,6 +65,7 @@ const SettingsPage: React.FC = () => {
   });
 
   const onOrgSubmit = async (data: OrgFormData) => {
+    setDefaultServiceFeePercentage(serviceFeePct);
     try {
       const res = await managerApi.organization.updateOrganization({
         name: data.name,
@@ -70,7 +73,7 @@ const SettingsPage: React.FC = () => {
         phone: data.phone,
       });
       if (res.success) {
-        success("Restoran ma'lumotlari muvaffaqiyatli saqlandi!");
+        success("Restoran ma'lumotlari va xizmat haqi saqlandi!");
         loadProfile();
       } else {
         toastError(res.error?.message || "Xatolik yuz berdi");
@@ -243,6 +246,48 @@ const SettingsPage: React.FC = () => {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-[#A1A1AA]">
+                    Standart xizmat haqi (%)
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    {[0, 10, 12, 15].map(pct => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => setServiceFeePct(pct)}
+                        className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-colors ${
+                          serviceFeePct === pct
+                            ? 'bg-[#F59E0B] text-black'
+                            : 'bg-[#242424] text-[#A1A1AA] hover:text-[#FAFAFA]'
+                        }`}
+                      >
+                        {pct}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="relative">
+                  <Percent size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#71717A]" />
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={serviceFeePct}
+                    onChange={e => {
+                      const val = Number(e.target.value);
+                      setServiceFeePct(Number.isFinite(val) ? Math.max(0, Math.min(100, val)) : 0);
+                    }}
+                    placeholder="10"
+                    className="w-full bg-[#121212] border border-[#2E2E2E] rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-[#FAFAFA] font-mono focus:outline-none focus:border-[#F59E0B] transition-colors"
+                  />
+                </div>
+                <p className="text-[11px] text-[#71717A] mt-1">
+                  Yangi buyurtma olinganda avtomatik qo‘llanadigan xizmat haqi foizi.
+                </p>
               </div>
 
               <div className="pt-2 flex justify-end">

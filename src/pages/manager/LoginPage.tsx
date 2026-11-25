@@ -54,9 +54,11 @@ const LoginPage: React.FC = () => {
       >
         {/* Logo */}
         <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-[#F59E0B] rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#F59E0B]/20">
-            <span className="text-black font-extrabold text-2xl">D</span>
-          </div>
+          <img
+            src="/logo.png"
+            alt="Dastyor Menu"
+            className="w-16 h-16 rounded-2xl object-contain mx-auto mb-3 shadow-lg shadow-[#F59E0B]/20 bg-[#1A1A1A] p-1.5 border border-[#2A2A2A]"
+          />
           <h1 className="text-2xl font-bold text-[#FAFAFA]">Dastyor Menu</h1>
           <p className="text-[#A1A1AA] text-xs mt-1">Restoran Menejer & Ofitsiant Paneli</p>
         </div>

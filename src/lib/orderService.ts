@@ -3,6 +3,22 @@
 import { managerApi, ApiResponseEnvelope } from './managerClient';
 import { Order, OrderStatus, OrderItem } from './types';
 
+const SERVICE_FEE_STORAGE_KEY = 'dastyor_service_fee_pct';
+
+export function getDefaultServiceFeePercentage(): number {
+  if (typeof window === 'undefined') return 10;
+  const raw = window.localStorage.getItem(SERVICE_FEE_STORAGE_KEY);
+  if (raw === null) return 10;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100 ? parsed : 10;
+}
+
+export function setDefaultServiceFeePercentage(pct: number): void {
+  if (typeof window === 'undefined') return;
+  const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+  window.localStorage.setItem(SERVICE_FEE_STORAGE_KEY, String(clamped));
+}
+
 export interface GetOrdersParams {
   status?: OrderStatus | 'all';
   date?: string; // YYYY-MM-DD
@@ -87,7 +103,7 @@ class OrderService {
       table_id: payload.table_id,
       waiter_id: payload.waiter_id || null,
       customer_note: payload.customer_note || null,
-      tip_percentage: payload.tip_percentage || 10,
+      tip_percentage: payload.tip_percentage ?? getDefaultServiceFeePercentage(),
       items: payload.items.map((i) => ({
         menu_id: i.menu_id,
         quantity: i.quantity,

@@ -7,6 +7,20 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { getImageUrl } from '../../lib/types';
+import { staffService } from '../../lib/staffService';
+
+const prefetchRoute: Record<string, () => void> = {
+  '/manager': () => { void import('../../pages/manager/DashboardPage'); },
+  '/manager/orders': () => { void import('../../pages/manager/OrdersPage'); },
+  '/manager/menu': () => { void import('../../pages/manager/MenuPage'); },
+  '/manager/tables': () => { void import('../../pages/manager/TablesPage'); },
+  '/manager/staff': () => {
+    void import('../../pages/manager/StaffPage');
+    void staffService.getStaff();
+  },
+  '/manager/reports': () => { void import('../../pages/manager/ReportsPage'); },
+  '/manager/settings': () => { void import('../../pages/manager/SettingsPage'); },
+};
 
 const navItems = [
   { to: '/manager',          icon: LayoutDashboard,  label: 'Bosh sahifa',     end: true },
@@ -35,9 +49,7 @@ const Sidebar: React.FC = () => {
           {organization?.logo_url ? (
             <img src={getImageUrl(organization.logo_url) || organization.logo_url} alt="logo" className="w-9 h-9 rounded-btn object-cover" />
           ) : (
-            <div className="w-9 h-9 bg-[#F59E0B] rounded-btn flex items-center justify-center">
-              <span className="text-black font-bold text-sm">D</span>
-            </div>
+            <img src="/logo.png" alt="Dastyor" className="w-9 h-9 rounded-btn object-contain bg-[#222222] p-1 border border-[#2E2E2E]" />
           )}
           <div>
             <p className="text-[#FAFAFA] font-semibold text-sm leading-tight">Dastyor</p>
@@ -53,6 +65,8 @@ const Sidebar: React.FC = () => {
             <NavLink
               to={to}
               end={end}
+              onMouseEnter={() => prefetchRoute[to]?.()}
+              onFocus={() => prefetchRoute[to]?.()}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-btn text-sm font-medium transition-all ${
                   isActive

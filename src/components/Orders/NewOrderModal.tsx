@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, Search, Plus, Minus, ShoppingBag, Check, Utensils } from 'lucide-react';
 import { Menu, Table, UserProfile, formatPrice, getImageUrl } from '../../lib/types';
-import { orderService } from '../../lib/orderService';
+import { orderService, getDefaultServiceFeePercentage } from '../../lib/orderService';
 import { useToast } from '../../lib/toast';
 
 interface NewOrderModalProps {
@@ -34,7 +34,14 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [cart, setCart] = useState<Record<string, number>>({});
   const [customerNote, setCustomerNote] = useState('');
+  const [tipPercentage, setTipPercentage] = useState<number>(() => getDefaultServiceFeePercentage());
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    if (open) {
+      setTipPercentage(getDefaultServiceFeePercentage());
+    }
+  }, [open]);
 
   // Sync initialTableId when opened
   React.useEffect(() => {
@@ -103,7 +110,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
   }, [cart, menu]);
 
   const totalAmount = cartItems.reduce((sum, i) => sum + i.subtotal, 0);
-  const tipAmount = Math.round(totalAmount * 0.1); // 10%
+  const tipAmount = Math.round(totalAmount * (tipPercentage / 100));
   const grandTotal = totalAmount + tipAmount;
 
   const handleSubmit = async () => {
@@ -128,6 +135,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
         waiter_id: selectedWaiterId || null,
         items,
         customer_note: customerNote.trim() || null,
+        tip_percentage: tipPercentage,
         status: 'pending',
       });
 
@@ -400,8 +408,22 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({
                   <span>Taomlar summasi:</span>
                   <span>{formatPrice(totalAmount)}</span>
                 </div>
-                <div className="flex justify-between text-xs text-[#A1A1AA]">
-                  <span>Xizmat haqi (10%):</span>
+                <div className="flex justify-between items-center text-xs text-[#A1A1AA]">
+                  <div className="flex items-center gap-1.5">
+                    <span>Xizmat haqi:</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={tipPercentage}
+                      onChange={e => {
+                        const val = Number(e.target.value);
+                        setTipPercentage(Number.isFinite(val) ? Math.max(0, Math.min(100, val)) : 0);
+                      }}
+                      className="w-12 bg-[#121212] border border-[#2E2E2E] rounded-md px-1.5 py-0.5 text-center text-xs text-[#FAFAFA] font-mono focus:outline-none focus:border-[#F59E0B]"
+                    />
+                    <span>%</span>
+                  </div>
                   <span>{formatPrice(tipAmount)}</span>
                 </div>
                 <div className="pt-2 border-t border-[#2A2A2A] flex justify-between text-sm font-bold text-[#FAFAFA]">

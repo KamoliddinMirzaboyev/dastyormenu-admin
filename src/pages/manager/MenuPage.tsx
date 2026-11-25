@@ -7,6 +7,7 @@ import { Menu } from '../../lib/types';
 import { useAuthStore } from '../../store/authStore';
 import { GridSkeleton } from '../../components/UI/LoadingSkeleton';
 import Button from '../../components/UI/Button';
+import ConfirmModal from '../../components/UI/ConfirmModal';
 import { CategoryModal } from '../../components/Menu/CategoryModal';
 import { MenuFormModal } from '../../components/Menu/MenuFormModal';
 import { ProductFormModal } from '../../components/Menu/ProductFormModal';
@@ -25,6 +26,8 @@ const MenuPage: React.FC = () => {
   const [showDishModal, setShowDishModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editItem, setEditItem] = useState<Menu | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const dishCount = menus.filter(m => m.item_type !== 'product').length;
   const productCount = menus.filter(m => m.item_type === 'product').length;
@@ -38,11 +41,23 @@ const MenuPage: React.FC = () => {
 
   const stopListCount = menus.filter(m => !m.is_available).length;
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`"${name}" mahsulot/taomini o'chirishni xohlaysizmi?`)) return;
-    const err = await deleteMenu(id);
-    if (err) toastError(err);
-    else success('O\'chirildi');
+  const handleDelete = (id: string, name: string) => {
+    setDeleteTarget({ id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const err = await deleteMenu(deleteTarget.id);
+      if (err) toastError(err);
+      else {
+        success('O\'chirildi');
+        setDeleteTarget(null);
+      }
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleToggle = async (id: string, current: boolean) => {
@@ -110,12 +125,12 @@ const MenuPage: React.FC = () => {
           
           {/* 1. Taom qo'shish modal tugmasi */}
           <Button icon={Plus} onClick={handleOpenDishCreate} variant="primary">
-            + Taom qo'shish
+            Taom qo'shish
           </Button>
 
           {/* 2. Mahsulot qo'shish modal tugmasi */}
           <Button icon={Package} onClick={handleOpenProductCreate} variant="secondary">
-            + Mahsulot qo'shish (Cola, suv...)
+            Mahsulot qo'shish
           </Button>
 
           {/* Kategoriyalar */}
@@ -265,6 +280,20 @@ const MenuPage: React.FC = () => {
         orgId={orgId}
         onRefetch={refetch}
         uploadImage={handleUploadImage}
+      />
+
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        loading={deleting}
+        description={
+          deleteTarget && (
+            <>
+              <span className="text-[#FAFAFA] font-semibold">"{deleteTarget.name}"</span> menyudan o'chiriladi.
+            </>
+          )
+        }
       />
     </div>
   );

@@ -25,7 +25,7 @@ function mapTable(t: any): Table {
     waiter_name: t.waiter_name || null,
     is_active: t.is_active ?? true,
     qr_code_id: t.qr_code_id,
-    qr_code_url: t.qr_code_url || managerApi.tables.getQrCodeUrl(t.id),
+    qr_code_url: t.qr_code_url,
   };
 }
 
